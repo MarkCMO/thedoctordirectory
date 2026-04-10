@@ -28,4 +28,8 @@
     <loc>https://thedoctordirectory.com/sitemap-doctors-2.xml</loc>
     <lastmod>2026-04-10</lastmod>
   </sitemap>
+  <sitemap>
+    <loc>https://thedoctordirectory.com/sitemap-city-specialty.xml</loc>
+    <lastmod>2026-04-10</lastmod>
+  </sitemap>
 </sitemapindex>
