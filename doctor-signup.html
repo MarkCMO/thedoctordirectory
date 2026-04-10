@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Doctor Sign Up & Login | EliteMD — The Doctor Directory</title>
+<meta name="description" content="Join EliteMD as a verified specialist. Create your premium profile and start receiving patient leads.">
+<link rel="canonical" href="https://thedoctordirectory.com/doctor-signup">
+<meta property="og:title" content="Doctor Sign Up & Login | EliteMD"><meta property="og:description" content="Join EliteMD as a verified specialist. Create your premium profile and start receiving patient leads."><meta property="og:url" content="https://thedoctordirectory.com/doctor-signup"><meta property="og:type" content="website"><meta property="og:site_name" content="EliteMD - The Doctor Directory"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Doctor Sign Up & Login | EliteMD"><meta name="twitter:description" content="Join EliteMD as a verified specialist. Create your premium profile and start receiving patient leads.">
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.auth-page{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;}
+.auth-left{background:var(--navy);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:60px;}
+.auth-left::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 80% at 20% 80%,rgba(200,164,94,.08),transparent);}
+.auth-left-content{position:relative;z-index:1;max-width:480px;}
+.auth-left .logo{display:flex;align-items:center;gap:12px;margin-bottom:48px;text-decoration:none;}
+.auth-left .logo .mark{width:44px;height:44px;background:linear-gradient(145deg,var(--gold),var(--gold-dark));border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:800;font-size:22px;color:var(--navy);}
+.auth-left .logo .ltext{display:flex;flex-direction:column;gap:2px;}
+.auth-left .logo .lname{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--white);}
+.auth-left .logo .lname span{color:var(--gold);}
+.auth-left .logo .ltag{font-family:'DM Sans',sans-serif;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);font-weight:500;}
+.auth-left h1{font-family:'Playfair Display',serif;font-size:clamp(28px,3.5vw,40px);font-weight:700;color:var(--white);line-height:1.2;margin-bottom:20px;}
+.auth-left h1 em{font-style:italic;color:var(--gold);}
+.auth-left p{font-size:17px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:40px;}
+.auth-benefits{list-style:none;}
+.auth-benefits li{display:flex;align-items:flex-start;gap:14px;padding:14px 0;color:rgba(255,255,255,.7);font-size:15px;line-height:1.5;}
+.auth-benefits li .chk{width:28px;height:28px;background:rgba(45,139,95,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green);}
+.auth-benefits li strong{color:var(--white);}
+.auth-right{display:flex;align-items:flex-start;justify-content:center;padding:48px 40px;background:var(--cream);overflow-y:auto;max-height:100vh;}
+.auth-form-container{width:100%;max-width:460px;}
+.auth-tabs{display:flex;margin-bottom:28px;background:var(--white);border-radius:12px;padding:4px;border:1px solid var(--border);}
+.auth-tab{flex:1;padding:14px;text-align:center;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;border:none;background:transparent;cursor:pointer;border-radius:10px;transition:all .2s;color:var(--text-muted);}
+.auth-tab.active{background:var(--navy);color:var(--white);}
+.auth-form h2{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;margin-bottom:8px;}
+.auth-form .subtitle{font-size:15px;color:var(--text-secondary);margin-bottom:24px;}
+.fg{margin-bottom:16px;}
+.fg label{display:block;font-size:12.5px;font-weight:600;color:var(--text-primary);margin-bottom:5px;}
+.fg input,.fg select,.fg textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14.5px;color:var(--text-primary);background:var(--white);outline:none;transition:border-color .2s;box-sizing:border-box;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--gold);}
+.fg textarea{resize:vertical;min-height:80px;}
+.fg .note{font-size:11.5px;color:var(--text-muted);margin-top:3px;}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.plan-selector{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.plan-opt{padding:14px 10px;border:2px solid var(--border);border-radius:var(--radius);text-align:center;cursor:pointer;transition:all .2s;background:var(--white);position:relative;}
+.plan-opt:hover{border-color:var(--gold);}
+.plan-opt.selected{border-color:var(--gold);background:rgba(200,164,94,.06);}
+.plan-opt .pn{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600;}
+.plan-opt .pp{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin:3px 0 1px;}
+.plan-opt .pd{font-size:10.5px;color:var(--text-muted);}
+.plan-opt.pop::after{content:'POPULAR';position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--navy);font-size:9px;font-weight:700;padding:2px 8px;border-radius:100px;}
+.auth-submit{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--navy);border:none;border-radius:var(--radius);padding:15px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:4px;}
+.auth-submit:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(200,164,94,.4);}
+.auth-footer{text-align:center;margin-top:20px;font-size:14px;color:var(--text-muted);}
+.auth-footer a{color:var(--gold-dark);font-weight:600;text-decoration:none;}
+.section-label{font-size:13px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:.06em;margin:24px 0 12px;padding-top:16px;border-top:1px solid var(--border);}
+.success-state{text-align:center;padding:40px 20px;}
+.success-icon{width:72px;height:72px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;}
+.success-state h2{font-family:'Playfair Display',serif;font-size:26px;margin-bottom:12px;}
+.success-state p{font-size:15px;color:var(--text-secondary);line-height:1.6;margin-bottom:24px;}
+.err{border-color:#e74c3c !important;}
+.err-msg{color:#e74c3c;font-size:12px;margin-top:4px;}
+/* Mobile header (shown only on mobile when left panel is hidden) */
+.mobile-auth-header{display:none;background:var(--navy);padding:16px 20px;text-align:center;}
+.mobile-auth-header a{text-decoration:none;display:inline-flex;align-items:center;gap:10px;}
+.mobile-auth-header .m-mark{width:36px;height:36px;background:linear-gradient(145deg,var(--gold),var(--gold-dark));border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:800;font-size:17px;color:var(--navy);}
+.mobile-auth-header .m-name{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--white);}
+.mobile-auth-header .m-name span{color:var(--gold);}
+.mobile-auth-header .m-tag{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);font-weight:500;}
+@media(max-width:768px){
+  .auth-page{grid-template-columns:1fr;min-height:auto;}
+  .auth-left{display:none;}
+  .mobile-auth-header{display:block;}
+  .auth-right{max-height:none;padding:24px 20px 48px;align-items:flex-start;}
+  .auth-form-container{max-width:100%;}
+  .auth-tabs{margin-bottom:20px;}
+  .auth-form h2{font-size:24px;}
+  .plan-selector{grid-template-columns:repeat(3,1fr);gap:8px;}
+  .plan-opt .pp{font-size:18px;}
+  .fr{grid-template-columns:1fr;}
+  .fg{margin-bottom:14px;}
+  .section-label{margin:20px 0 10px;padding-top:12px;}
+}
+</style>
+</head>
+<body>
+<div class="mobile-auth-header">
+  <a href="/"><div class="m-mark">E</div><div style="display:flex;flex-direction:column;gap:1px;text-align:left;"><div class="m-name">Elite<span>MD</span></div><div class="m-tag">The Doctor Directory</div></div></a>
+</div>
+<div class="auth-page">
+  <div class="auth-left">
+    <div class="auth-left-content">
+      <a href="/" class="logo"><div class="mark">E</div><div class="ltext"><div class="lname">Elite<span>MD</span></div><div class="ltag">The Doctor Directory</div></div></a>
+      <h1>Grow Your Practice with <em>Qualified Patient Leads</em></h1>
+      <p>Join 2,000+ verified specialists on the most prestigious medical directory.</p>
+      <ul class="auth-benefits">
+        <li><div class="chk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 12 2 2 4-4"/></svg></div><div><strong>Verified Premium Profile</strong><br>Showcase education, innovations, and outcomes</div></li>
+        <li><div class="chk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 12 2 2 4-4"/></svg></div><div><strong>Qualified Patient Leads</strong><br>Pre-triaged inquiries from patients seeking your expertise</div></li>
+        <li><div class="chk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 12 2 2 4-4"/></svg></div><div><strong>HIPAA-Compliant Messaging</strong><br>Secure inbox for patient communication</div></li>
+        <li><div class="chk"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 12 2 2 4-4"/></svg></div><div><strong>Doctor-to-Patient Travel</strong><br>Opt into our travel program to serve patients nationwide</div></li>
+      </ul>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-form-container">
+      <div class="auth-tabs" id="auth-tabs">
+        <button class="auth-tab active" onclick="showTab('signup')">Sign Up</button>
+        <button class="auth-tab" onclick="showTab('login')">Log In</button>
+      </div>
+
+      <!-- SIGNUP -->
+      <div id="tab-signup" class="auth-form">
+        <h2>Create Your Account</h2>
+        <p class="subtitle">Start receiving patient leads in minutes.</p>
+        <form id="signup-form" name="doctor-signup" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+          <input type="hidden" name="form-name" value="doctor-signup">
+          <p style="display:none"><label>Don't fill this out: <input name="bot-field"></label></p>
+          
+          <div class="plan-selector">
+            <div class="plan-opt" onclick="selPlan(this,'free')"><div class="pn">Free</div><div class="pp">$0</div><div class="pd">5 leads/mo</div></div>
+            <div class="plan-opt pop selected" onclick="selPlan(this,'premium')"><div class="pn">Premium</div><div class="pp">$299</div><div class="pd">Unlimited</div></div>
+            <div class="plan-opt" onclick="selPlan(this,'elite')"><div class="pn">Elite</div><div class="pp">$799</div><div class="pd">Featured</div></div>
+          </div>
+          <input type="hidden" name="plan" id="plan-val" value="premium">
+
+          <div class="section-label">Personal Information</div>
+          <div class="fr">
+            <div class="fg"><label>First Name *</label><input type="text" name="firstName" id="s-first" required placeholder="James"></div>
+            <div class="fg"><label>Last Name *</label><input type="text" name="lastName" id="s-last" required placeholder="Smith"></div>
+          </div>
+          <div class="fg"><label>Email *</label><input type="email" name="email" id="s-email" required placeholder="doctor@practice.com"></div>
+          <div class="fg"><label>Password *</label><input type="password" name="password" id="s-pass" required placeholder="Min 8 characters" minlength="8"></div>
+
+          <div class="section-label">Professional Details</div>
+          <div class="fg"><label>NPI Number *</label><input type="text" name="npi" id="s-npi" required placeholder="1234567890" pattern="[0-9]{10}" maxlength="10"><div class="note">10-digit NPI — we verify via the NPPES Registry</div></div>
+          <div class="fr">
+            <div class="fg"><label>Specialty *</label><select name="specialty" id="s-spec" required><option value="">Select...</option><option>Orthopedic Surgery</option><option>Cardiothoracic Surgery</option><option>Neurosurgery</option><option>Plastic Surgery</option><option>Oncology</option><option>Spine Surgery</option><option>Ophthalmology</option><option>Dermatology</option><option>Gastroenterology</option><option>Urology</option><option>Bariatric Surgery</option><option>Pediatric Cardiology</option><option>Rheumatology</option><option>ENT Surgery</option><option>Vascular Surgery</option><option>Reproductive Medicine</option></select></div>
+            <div class="fg"><label>Sub-Specialty</label><input type="text" name="subSpecialty" id="s-sub" placeholder="e.g. Sports Medicine"></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label>City *</label><input type="text" name="city" id="s-city" required placeholder="Houston"></div>
+            <div class="fg"><label>State *</label><select name="state" id="s-state" required><option value="">Select...</option><option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option></select></div>
+          </div>
+          <div class="fg"><label>Phone</label><input type="tel" name="phone" id="s-phone" placeholder="(555) 123-4567"></div>
+          <div class="fg"><label>Practice / Hospital</label><input type="text" name="practice" id="s-practice" placeholder="Houston Methodist Hospital"></div>
+
+          <div class="section-label">Profile Details (Optional — complete later)</div>
+          <div class="fr">
+            <div class="fg"><label>Years of Experience</label><input type="number" name="yearsExp" id="s-years" placeholder="15" min="0" max="60"></div>
+            <div class="fg"><label>Board Certifications</label><input type="text" name="boardCerts" id="s-certs" placeholder="e.g. ABOS, FACS"></div>
+          </div>
+          <div class="fg"><label>Medical School</label><input type="text" name="education" id="s-school" placeholder="Harvard Medical School"></div>
+          <div class="fg"><label>Fellowship</label><input type="text" name="fellowship" id="s-fellow" placeholder="Mayo Clinic Sports Medicine"></div>
+          <div class="fg"><label>Bio</label><textarea name="bio" id="s-bio" placeholder="Brief professional bio..."></textarea></div>
+          <div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" name="willTravel" id="s-travel"> I'm interested in the Doctor-to-Patient Travel Program</label></div>
+
+          <button type="submit" class="auth-submit">Create Account</button>
+        </form>
+        <div class="auth-footer">Already have an account? <a href="#" onclick="showTab('login');return false">Log in</a></div>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="tab-login" class="auth-form" style="display:none">
+        <h2>Welcome Back</h2>
+        <p class="subtitle">Access your leads and messages.</p>
+        <div class="fg"><label>Email</label><input type="email" id="l-email" required placeholder="doctor@practice.com"></div>
+        <div class="fg"><label>Password</label><input type="password" id="l-pass" required placeholder="Your password"></div>
+        <button class="auth-submit" onclick="handleLogin()">Log In to Dashboard</button>
+        <div class="auth-footer" style="margin-top:16px">Don't have an account? <a href="#" onclick="showTab('signup');return false">Sign up free</a></div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div id="tab-success" style="display:none">
+        <div class="success-state">
+          <div class="success-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2D8B5F" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></div>
+          <h2>Account Created!</h2>
+          <p id="success-msg">Your profile is being verified. You'll receive a confirmation email shortly.</p>
+          <a href="/dashboard" class="auth-submit" style="display:inline-block;text-decoration:none;text-align:center">Go to Your Dashboard →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var selectedPlan = 'premium';
+
+function showTab(tab) {
+  document.querySelectorAll('.auth-form,[id^="tab-"]').forEach(function(el){el.style.display='none'});
+  document.getElementById('tab-'+tab).style.display='block';
+  var tabs = document.querySelectorAll('.auth-tab');
+  tabs.forEach(function(t){t.classList.remove('active')});
+  if(tab==='login') tabs[1].classList.add('active');
+  else if(tab==='signup') tabs[0].classList.add('active');
+  if(tab==='success') document.getElementById('auth-tabs').style.display='none';
+}
+
+// Read URL hash to determine which tab to show
+var hash = window.location.hash.replace('#','');
+if(hash === 'login') { showTab('login'); }
+
+// If already logged in, redirect to dashboard
+try {
+  if(localStorage.getItem('elitemd_logged_in') === 'true' && localStorage.getItem('elitemd_doctor')) {
+    window.location.href = '/dashboard';
+  }
+} catch(e){}
+
+function selPlan(el, plan) {
+  selectedPlan = plan;
+  document.querySelectorAll('.plan-opt').forEach(function(p){p.classList.remove('selected')});
+  el.classList.add('selected');
+  document.getElementById('plan-val').value = plan;
+}
+
+// SIGNUP: Save doctor data locally, also submit to Netlify Forms
+document.getElementById('signup-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  var doctor = {
+    firstName: document.getElementById('s-first').value.trim(),
+    lastName: document.getElementById('s-last').value.trim(),
+    email: document.getElementById('s-email').value.trim(),
+    npi: document.getElementById('s-npi').value.trim(),
+    specialty: document.getElementById('s-spec').value,
+    subSpecialty: document.getElementById('s-sub').value.trim(),
+    city: document.getElementById('s-city').value.trim(),
+    state: document.getElementById('s-state').value,
+    phone: document.getElementById('s-phone').value.trim(),
+    practice: document.getElementById('s-practice').value.trim(),
+    yearsExp: document.getElementById('s-years').value || '0',
+    boardCerts: document.getElementById('s-certs').value.trim(),
+    education: document.getElementById('s-school').value.trim(),
+    fellowship: document.getElementById('s-fellow').value.trim(),
+    bio: document.getElementById('s-bio').value.trim(),
+    willTravel: document.getElementById('s-travel').checked,
+    plan: selectedPlan,
+    createdAt: new Date().toISOString(),
+    leads: [],
+    messages: [],
+    profileViews: 0,
+    searchRanking: Math.floor(Math.random()*50)+1
+  };
+  
+  // Validate
+  if(!doctor.firstName || !doctor.lastName || !doctor.email || !doctor.npi || !doctor.specialty || !doctor.city || !doctor.state) {
+    alert('Please fill in all required fields.');
+    return;
+  }
+  if(doctor.npi.length !== 10) {
+    alert('NPI must be exactly 10 digits.');
+    return;
+  }
+  
+  // Save to localStorage
+  try {
+    localStorage.setItem('elitemd_doctor', JSON.stringify(doctor));
+    localStorage.setItem('elitemd_logged_in', 'true');
+  } catch(err) {
+    console.log('Storage not available, continuing...');
+  }
+  
+  // Also submit to Netlify Forms via fetch
+  var formData = new FormData(document.getElementById('signup-form'));
+  fetch('/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: new URLSearchParams(formData).toString()
+  }).catch(function(){});
+  
+  // Show success
+  document.getElementById('success-msg').textContent = 
+    'Welcome, Dr. ' + doctor.lastName + '! Your ' + doctor.specialty + 
+    ' profile is being verified against the NPI Registry. Check your email at ' + 
+    doctor.email + ' for confirmation.';
+  showTab('success');
+});
+
+// LOGIN
+function handleLogin() {
+  var email = document.getElementById('l-email').value.trim();
+  var pass = document.getElementById('l-pass').value;
+  if(!email || !pass) { alert('Please enter email and password.'); return; }
+  
+  // Check if we have a stored doctor with this email
+  try {
+    var stored = JSON.parse(localStorage.getItem('elitemd_doctor') || '{}');
+    if(stored.email && stored.email.toLowerCase() === email.toLowerCase()) {
+      localStorage.setItem('elitemd_logged_in', 'true');
+      window.location.href = '/dashboard';
+      return;
+    }
+  } catch(e){}
+  
+  // For demo: create a minimal profile from login info
+  var doc = {
+    firstName: '',
+    lastName: '',
+    email: email,
+    specialty: '',
+    city: '',
+    state: '',
+    plan: 'free',
+    createdAt: new Date().toISOString(),
+    leads: [],
+    messages: [],
+    profileViews: 0
+  };
+  try {
+    localStorage.setItem('elitemd_doctor', JSON.stringify(doc));
+    localStorage.setItem('elitemd_logged_in', 'true');
+  } catch(e){}
+  window.location.href = '/dashboard';
+}
+</script>
+</body>
+</html>

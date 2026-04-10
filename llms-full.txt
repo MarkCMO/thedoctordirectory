@@ -1,0 +1,154 @@
+# EliteMD - The Doctor Directory (Full Reference)
+
+> A curated directory of 7,402+ peer-verified doctors and surgeons across 15 specialties in 47 US states.
+
+## About
+
+EliteMD (thedoctordirectory.com) is a medical specialist directory that helps patients find world-class doctors. Each doctor is verified through peer review, with profiles displaying publications, patents, procedure volume, ratings, and whether they accept travel patients.
+
+## Site Structure
+
+### Core Pages
+- Homepage: https://thedoctordirectory.com/
+- Find a Doctor: https://thedoctordirectory.com/find-a-doctor
+- Specialties Index: https://thedoctordirectory.com/specialties/
+- For Doctors: https://thedoctordirectory.com/for-doctors
+- Doctor Signup: https://thedoctordirectory.com/doctor-signup
+- How It Works: https://thedoctordirectory.com/how-it-works
+- About: https://thedoctordirectory.com/about
+- Contact: https://thedoctordirectory.com/contact
+- HIPAA Compliance: https://thedoctordirectory.com/hipaa
+- Privacy Policy: https://thedoctordirectory.com/privacy-policy
+- Terms of Service: https://thedoctordirectory.com/terms
+
+### 15 Specialty Pages
+- https://thedoctordirectory.com/specialties/bariatric-surgery
+- https://thedoctordirectory.com/specialties/cardiothoracic-surgery
+- https://thedoctordirectory.com/specialties/dermatology
+- https://thedoctordirectory.com/specialties/ent-surgery
+- https://thedoctordirectory.com/specialties/gastroenterology
+- https://thedoctordirectory.com/specialties/neurosurgery
+- https://thedoctordirectory.com/specialties/oncology
+- https://thedoctordirectory.com/specialties/ophthalmology
+- https://thedoctordirectory.com/specialties/orthopedic-surgery
+- https://thedoctordirectory.com/specialties/pediatric-cardiology
+- https://thedoctordirectory.com/specialties/plastic-surgery
+- https://thedoctordirectory.com/specialties/reproductive-medicine
+- https://thedoctordirectory.com/specialties/rheumatology
+- https://thedoctordirectory.com/specialties/urology
+- https://thedoctordirectory.com/specialties/vascular-surgery
+
+### 87 Condition Pages
+- https://thedoctordirectory.com/conditions/acl-tear
+- https://thedoctordirectory.com/conditions/acne
+- https://thedoctordirectory.com/conditions/aneurysm
+- https://thedoctordirectory.com/conditions/ankylosing-spondylitis
+- https://thedoctordirectory.com/conditions/aortic-aneurysm
+- https://thedoctordirectory.com/conditions/arthritis
+- https://thedoctordirectory.com/conditions/atrial-fibrillation
+- https://thedoctordirectory.com/conditions/atrial-septal-defect
+- https://thedoctordirectory.com/conditions/basal-cell-carcinoma
+- https://thedoctordirectory.com/conditions/bladder-cancer
+- https://thedoctordirectory.com/conditions/bph
+- https://thedoctordirectory.com/conditions/brain-tumor
+- https://thedoctordirectory.com/conditions/breast-cancer
+- https://thedoctordirectory.com/conditions/breast-reconstruction
+- https://thedoctordirectory.com/conditions/bunion
+- https://thedoctordirectory.com/conditions/burn-reconstruction
+- https://thedoctordirectory.com/conditions/carotid-artery-disease
+- https://thedoctordirectory.com/conditions/carpal-tunnel
+- https://thedoctordirectory.com/conditions/cataracts
+- https://thedoctordirectory.com/conditions/celiac-disease
+- https://thedoctordirectory.com/conditions/chronic-sinusitis
+- https://thedoctordirectory.com/conditions/cleft-palate
+- https://thedoctordirectory.com/conditions/colon-cancer
+- https://thedoctordirectory.com/conditions/colon-polyps
+- https://thedoctordirectory.com/conditions/congenital-heart-disease
+- https://thedoctordirectory.com/conditions/coronary-artery-disease
+- https://thedoctordirectory.com/conditions/crohns-disease
+- https://thedoctordirectory.com/conditions/deep-vein-thrombosis
+- https://thedoctordirectory.com/conditions/detached-retina
+- https://thedoctordirectory.com/conditions/deviated-septum
+- https://thedoctordirectory.com/conditions/diabetic-retinopathy
+- https://thedoctordirectory.com/conditions/eczema
+- https://thedoctordirectory.com/conditions/endometriosis
+- https://thedoctordirectory.com/conditions/epilepsy
+- https://thedoctordirectory.com/conditions/fracture
+- https://thedoctordirectory.com/conditions/gerd
+- https://thedoctordirectory.com/conditions/glaucoma
+- https://thedoctordirectory.com/conditions/gout
+- https://thedoctordirectory.com/conditions/hand-injury
+- https://thedoctordirectory.com/conditions/head-neck-cancer
+- https://thedoctordirectory.com/conditions/hearing-loss
+- https://thedoctordirectory.com/conditions/heart-failure
+- https://thedoctordirectory.com/conditions/heart-murmur
+- https://thedoctordirectory.com/conditions/heart-valve-disease
+- https://thedoctordirectory.com/conditions/herniated-disc
+- https://thedoctordirectory.com/conditions/hip-replacement
+- https://thedoctordirectory.com/conditions/hydrocephalus
+- https://thedoctordirectory.com/conditions/infertility
+- https://thedoctordirectory.com/conditions/kidney-cancer
+- https://thedoctordirectory.com/conditions/kidney-stones
+- https://thedoctordirectory.com/conditions/knee-replacement
+- https://thedoctordirectory.com/conditions/lasik-candidacy
+- https://thedoctordirectory.com/conditions/liver-cirrhosis
+- https://thedoctordirectory.com/conditions/lung-cancer
+- https://thedoctordirectory.com/conditions/lupus
+- https://thedoctordirectory.com/conditions/lymphoma
+- https://thedoctordirectory.com/conditions/macular-degeneration
+- https://thedoctordirectory.com/conditions/melanoma
+- https://thedoctordirectory.com/conditions/meniscus-tear
+- https://thedoctordirectory.com/conditions/metabolic-syndrome
+- https://thedoctordirectory.com/conditions/obesity
+- https://thedoctordirectory.com/conditions/pancreatic-cancer
+- https://thedoctordirectory.com/conditions/pancreatitis
+- https://thedoctordirectory.com/conditions/pcos
+- https://thedoctordirectory.com/conditions/peripheral-artery-disease
+- https://thedoctordirectory.com/conditions/prostate-cancer
+- https://thedoctordirectory.com/conditions/psoriasis
+- https://thedoctordirectory.com/conditions/psoriatic-arthritis
+- https://thedoctordirectory.com/conditions/recurrent-miscarriage
+- https://thedoctordirectory.com/conditions/rheumatoid-arthritis
+- https://thedoctordirectory.com/conditions/rosacea
+- https://thedoctordirectory.com/conditions/rotator-cuff-tear
+- https://thedoctordirectory.com/conditions/scleroderma
+- https://thedoctordirectory.com/conditions/shoulder-impingement
+- https://thedoctordirectory.com/conditions/skin-cancer
+- https://thedoctordirectory.com/conditions/skin-cancer-reconstruction
+- https://thedoctordirectory.com/conditions/sleep-apnea
+- https://thedoctordirectory.com/conditions/spinal-stenosis
+- https://thedoctordirectory.com/conditions/tennis-elbow
+- https://thedoctordirectory.com/conditions/tonsillitis
+- https://thedoctordirectory.com/conditions/trigeminal-neuralgia
+- https://thedoctordirectory.com/conditions/type-2-diabetes
+- https://thedoctordirectory.com/conditions/ulcerative-colitis
+- https://thedoctordirectory.com/conditions/urinary-incontinence
+- https://thedoctordirectory.com/conditions/uterine-fibroids
+- https://thedoctordirectory.com/conditions/varicose-veins
+- https://thedoctordirectory.com/conditions/ventricular-septal-defect
+
+### 7,402+ Doctor Profile Pages
+- URL format: https://thedoctordirectory.com/doctors/dr-firstname-lastname-ID
+- Each profile includes: name, specialty, sub-specialty, location, ratings, publications, patents, procedure count, years of experience, travel availability
+
+## Doctor Verification Criteria
+
+Doctors are evaluated on:
+1. Peer reviews and ratings
+2. Published research (publications count)
+3. Medical patents
+4. Procedure volume
+5. Years of active practice
+6. Board certifications
+7. Sub-specialty training
+
+## Key Statistics
+- 7,402+ verified specialists
+- 15 medical specialties
+- 87 medical conditions covered
+- 47 US states represented
+- 2,231+ travel-ready doctors
+
+## Contact
+- Website: https://thedoctordirectory.com
+- Contact page: https://thedoctordirectory.com/contact

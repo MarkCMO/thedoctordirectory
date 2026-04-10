@@ -1,0 +1,28 @@
+# EliteMD - The Doctor Directory
+
+> A curated directory of 7,402+ peer-verified doctors and surgeons across 15 specialties in 47 US states.
+
+EliteMD helps patients find world-class medical specialists verified through peer review, publications, patents, and procedure volume.
+
+## Key Pages
+
+- [Homepage](https://thedoctordirectory.com/): Search doctors by specialty, condition, or state
+- [Find a Doctor](https://thedoctordirectory.com/find-a-doctor): Full searchable directory with filters
+- [Specialties](https://thedoctordirectory.com/specialties/): Browse all 15 medical specialties
+- [For Doctors](https://thedoctordirectory.com/for-doctors): Doctor enrollment and benefits
+- [How It Works](https://thedoctordirectory.com/how-it-works): Verification and listing process
+- [About](https://thedoctordirectory.com/about): Company mission and methodology
+- [Contact](https://thedoctordirectory.com/contact): Get in touch
+- [HIPAA Compliance](https://thedoctordirectory.com/hipaa): Privacy and data handling
+
+## Specialties Covered
+
+Bariatric Surgery, Cardiothoracic Surgery, Dermatology, ENT Surgery, Gastroenterology, Neurosurgery, Oncology, Ophthalmology, Orthopedic Surgery, Pediatric Cardiology, Plastic Surgery, Reproductive Medicine, Rheumatology, Urology, Vascular Surgery
+
+## Conditions Treated
+
+87 conditions including ACL Tear, Brain Tumor, Breast Cancer, Cataracts, Coronary Artery Disease, Epilepsy, Glaucoma, Heart Failure, Kidney Stones, Lung Cancer, Melanoma, Obesity, Prostate Cancer, Rheumatoid Arthritis, Spinal Stenosis, and more.
+
+## Full Details
+
+For comprehensive information, see [llms-full.txt](https://thedoctordirectory.com/llms-full.txt)

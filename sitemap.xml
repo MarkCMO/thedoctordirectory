@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://thedoctordirectory.com/sitemap-core.xml</loc>
+    <lastmod>2026-04-10</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://thedoctordirectory.com/sitemap-specialties.xml</loc>
+    <lastmod>2026-04-10</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://thedoctordirectory.com/sitemap-conditions.xml</loc>
+    <lastmod>2026-04-10</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://thedoctordirectory.com/sitemap-states.xml</loc>
+    <lastmod>2026-04-10</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://thedoctordirectory.com/sitemap-florida.xml</loc>
+    <lastmod>2026-04-10</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://thedoctordirectory.com/sitemap-doctors-1.xml</loc>
+    <lastmod>2026-04-10</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://thedoctordirectory.com/sitemap-doctors-2.xml</loc>
+    <lastmod>2026-04-10</lastmod>
+  </sitemap>
+</sitemapindex>

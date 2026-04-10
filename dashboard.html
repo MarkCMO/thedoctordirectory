@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Doctor Dashboard | EliteMD — The Doctor Directory</title>
+<meta name="description" content="Manage your EliteMD profile, patient leads, messages, and analytics.">
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--navy:#0B1D33;--gold:#C8A45E;--gold-dark:#A8893E;--cream:#FAF7F2;--green:#2D8B5F;--green-light:#E8F5EE;--border:#E8E4DD;--text-primary:#1A1A1A;--text-secondary:#5A5A5A;--text-muted:#8A8A8A;--white:#fff;--radius:8px;--radius-lg:14px;}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-primary);min-height:100vh;}
+/* Sidebar */
+.dash-layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh;}
+.dash-sidebar{background:var(--navy);padding:24px 0;display:flex;flex-direction:column;}
+.dash-sidebar .logo{display:flex;align-items:center;gap:12px;padding:0 24px 28px;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px;}
+.dash-sidebar .logo .mark{width:38px;height:38px;background:linear-gradient(145deg,var(--gold),var(--gold-dark));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:800;font-size:18px;color:var(--navy);}
+.dash-sidebar .logo .lw{display:flex;flex-direction:column;gap:1px;}
+.dash-sidebar .logo .ln{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--white);}
+.dash-sidebar .logo .ln span{color:var(--gold);}
+.dash-sidebar .logo .lt{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:500;}
+.nav-items{flex:1;padding:8px 12px;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;color:rgba(255,255,255,.5);font-size:14px;font-weight:500;text-decoration:none;border-radius:var(--radius);cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+.nav-item:hover{color:rgba(255,255,255,.8);background:rgba(255,255,255,.05);}
+.nav-item.active{color:var(--white);background:rgba(200,164,94,.12);}
+.nav-item.active svg{color:var(--gold);}
+.nav-item svg{width:18px;height:18px;flex-shrink:0;}
+.sidebar-bottom{padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);margin:0 12px;}
+.doc-badge{display:flex;align-items:center;gap:10px;padding:12px 0;}
+.doc-avatar-sm{width:36px;height:36px;background:rgba(200,164,94,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.doc-info-sm{flex:1;min-width:0;}
+.doc-name-sm{font-size:13px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.doc-spec-sm{font-size:11px;color:rgba(255,255,255,.4);}
+.logout-btn{display:flex;align-items:center;gap:8px;padding:10px 0;color:rgba(255,255,255,.4);font-size:13px;cursor:pointer;border:none;background:none;font-family:inherit;transition:color .2s;}
+.logout-btn:hover{color:#e74c3c;}
+/* Main content */
+.dash-main{padding:32px;overflow-y:auto;max-height:100vh;}
+.dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;}
+.dash-header h1{font-family:'Playfair Display',serif;font-size:clamp(22px,2.5vw,28px);font-weight:700;}
+.dash-header .plan-badge{padding:6px 14px;border-radius:100px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.plan-free{background:var(--border);color:var(--text-muted);}
+.plan-premium{background:rgba(200,164,94,.12);color:var(--gold-dark);}
+.plan-elite{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--navy);}
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;}
+.stat-label{font-size:12px;color:var(--text-muted);font-weight:500;margin-bottom:6px;}
+.stat-value{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;}
+.stat-change{font-size:11px;color:var(--green);margin-top:4px;}
+/* Sections */
+.section{display:none;}
+.section.active{display:block;}
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px;}
+.card h3{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;margin-bottom:16px;}
+/* Table */
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;padding:10px 12px;border-bottom:1px solid var(--border);}
+td{padding:12px;font-size:14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.badge{padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block;}
+.badge-new{background:var(--green-light);color:var(--green);}
+.badge-pending{background:#FFF3CD;color:#856404;}
+.badge-replied{background:#D1ECF1;color:#0C5460;}
+.badge-closed{background:var(--border);color:var(--text-muted);}
+/* Messages */
+.msg-item{display:flex;gap:14px;padding:16px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;cursor:pointer;transition:all .15s;background:var(--white);}
+.msg-item:hover{border-color:var(--gold);box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.msg-item.unread{background:rgba(200,164,94,.03);border-left:3px solid var(--gold);}
+.msg-avatar{width:40px;height:40px;background:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:700;color:var(--gold-dark);}
+.msg-body{flex:1;min-width:0;}
+.msg-from{font-size:14px;font-weight:600;}
+.msg-preview{font-size:13px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.msg-time{font-size:11px;color:var(--text-muted);flex-shrink:0;}
+/* Profile form */
+.pf-group{margin-bottom:18px;}
+.pf-group label{display:block;font-size:12.5px;font-weight:600;color:var(--text-primary);margin-bottom:5px;}
+.pf-group input,.pf-group select,.pf-group textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--white);outline:none;}
+.pf-group input:focus,.pf-group select:focus,.pf-group textarea:focus{border-color:var(--gold);}
+.pf-group textarea{resize:vertical;min-height:100px;}
+.pf-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.pf-save{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--navy);border:none;border-radius:var(--radius);padding:14px 28px;font-weight:700;font-size:15px;cursor:pointer;transition:all .2s;}
+.pf-save:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(200,164,94,.3);}
+.pf-saved{color:var(--green);font-size:14px;font-weight:600;margin-left:16px;display:none;}
+/* Locked overlay */
+.locked{position:relative;pointer-events:none;user-select:none;}
+.locked::after{content:'';position:absolute;inset:0;background:rgba(250,247,242,.7);backdrop-filter:blur(4px);border-radius:var(--radius-lg);z-index:1;}
+.lock-cta{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;background:var(--white);padding:24px 32px;border-radius:var(--radius-lg);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.1);pointer-events:all;}
+.lock-cta h4{font-family:'Playfair Display',serif;font-size:18px;margin-bottom:8px;}
+.lock-cta p{font-size:13px;color:var(--text-secondary);margin-bottom:16px;}
+.lock-cta a{display:inline-block;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--navy);padding:10px 24px;border-radius:var(--radius);font-weight:700;font-size:14px;text-decoration:none;}
+/* Empty states */
+.empty{text-align:center;padding:48px 24px;color:var(--text-muted);}
+.empty h4{font-family:'Playfair Display',serif;font-size:18px;color:var(--text-primary);margin-bottom:8px;}
+.empty p{font-size:14px;line-height:1.6;}
+/* Mobile */
+@media(max-width:768px){
+  .dash-layout{grid-template-columns:1fr;}
+  .dash-sidebar{display:none;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .pf-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <a href="/" class="logo"><div class="mark">E</div><div class="lw"><div class="ln">Elite<span>MD</span></div><div class="lt">The Doctor Directory</div></div></a>
+    <div class="nav-items">
+      <button class="nav-item active" onclick="showSection('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg> Dashboard</button>
+      <button class="nav-item" onclick="showSection('leads')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Patient Leads</button>
+      <button class="nav-item" onclick="showSection('messages')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</button>
+      <button class="nav-item" onclick="showSection('analytics')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> Analytics</button>
+      <button class="nav-item" onclick="showSection('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Edit Profile</button>
+      <button class="nav-item" onclick="showSection('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Settings</button>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="doc-badge">
+        <div class="doc-avatar-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(200,164,94,.8)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <div class="doc-info-sm"><div class="doc-name-sm" id="sidebar-name">Doctor</div><div class="doc-spec-sm" id="sidebar-spec">Specialty</div></div>
+      </div>
+      <button class="logout-btn" onclick="logout()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg> Log Out</button>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <!-- DASHBOARD -->
+    <div class="section active" id="sec-dashboard">
+      <div class="dash-header"><h1 id="welcome-msg">Welcome back</h1><span class="plan-badge" id="plan-display">FREE</span></div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">New Leads</div><div class="stat-value" id="stat-leads">0</div><div class="stat-change">This month</div></div>
+        <div class="stat-card"><div class="stat-label">Messages</div><div class="stat-value" id="stat-msgs">0</div><div class="stat-change">Unread</div></div>
+        <div class="stat-card"><div class="stat-label">Profile Views</div><div class="stat-value" id="stat-views">0</div><div class="stat-change">Last 30 days</div></div>
+        <div class="stat-card"><div class="stat-label">Search Ranking</div><div class="stat-value" id="stat-rank">#—</div><div class="stat-change" id="stat-rank-note">In your specialty</div></div>
+      </div>
+      <div class="card"><h3>Quick Actions</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button onclick="showSection('profile')" style="padding:12px 20px;background:var(--navy);color:white;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;">Complete Your Profile</button>
+          <button onclick="showSection('leads')" style="padding:12px 20px;background:var(--cream);color:var(--text-primary);border:1px solid var(--border);border-radius:var(--radius);font-weight:600;cursor:pointer;">View Leads</button>
+          <a href="/" style="padding:12px 20px;background:var(--cream);color:var(--text-primary);border:1px solid var(--border);border-radius:var(--radius);font-weight:600;text-decoration:none;display:inline-block;">View Public Site</a>
+        </div>
+      </div>
+      <div class="card" id="profile-completeness"><h3>Profile Completeness</h3><div id="completeness-bar"></div></div>
+    </div>
+
+    <!-- LEADS -->
+    <div class="section" id="sec-leads">
+      <div class="dash-header"><h1>Patient Leads</h1></div>
+      <div class="card" id="leads-content"></div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="section" id="sec-messages">
+      <div class="dash-header"><h1>Messages</h1></div>
+      <div id="messages-content"></div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="section" id="sec-analytics">
+      <div class="dash-header"><h1>Profile Analytics</h1></div>
+      <div id="analytics-content"></div>
+    </div>
+
+    <!-- EDIT PROFILE -->
+    <div class="section" id="sec-profile">
+      <div class="dash-header"><h1>Edit Your Profile</h1></div>
+      <div class="card">
+        <form id="profile-form">
+          <div class="pf-row">
+            <div class="pf-group"><label>First Name</label><input id="pf-first"></div>
+            <div class="pf-group"><label>Last Name</label><input id="pf-last"></div>
+          </div>
+          <div class="pf-row">
+            <div class="pf-group"><label>Specialty</label><select id="pf-spec"><option>Orthopedic Surgery</option><option>Cardiothoracic Surgery</option><option>Neurosurgery</option><option>Plastic Surgery</option><option>Oncology</option><option>Spine Surgery</option><option>Ophthalmology</option><option>Dermatology</option><option>Gastroenterology</option><option>Urology</option><option>Bariatric Surgery</option><option>Pediatric Cardiology</option><option>Rheumatology</option><option>ENT Surgery</option><option>Vascular Surgery</option><option>Reproductive Medicine</option></select></div>
+            <div class="pf-group"><label>Sub-Specialty</label><input id="pf-sub"></div>
+          </div>
+          <div class="pf-row">
+            <div class="pf-group"><label>City</label><input id="pf-city"></div>
+            <div class="pf-group"><label>State</label><input id="pf-state"></div>
+          </div>
+          <div class="pf-row">
+            <div class="pf-group"><label>Phone</label><input id="pf-phone"></div>
+            <div class="pf-group"><label>Practice / Hospital</label><input id="pf-practice"></div>
+          </div>
+          <div class="pf-row">
+            <div class="pf-group"><label>Years of Experience</label><input type="number" id="pf-years"></div>
+            <div class="pf-group"><label>NPI Number</label><input id="pf-npi" readonly style="background:#f5f5f5;"></div>
+          </div>
+          <div class="pf-group"><label>Board Certifications</label><input id="pf-certs" placeholder="e.g. ABOS, FACS"></div>
+          <div class="pf-group"><label>Medical School</label><input id="pf-school"></div>
+          <div class="pf-group"><label>Fellowship</label><input id="pf-fellow"></div>
+          <div class="pf-group"><label>Bio</label><textarea id="pf-bio" placeholder="Professional biography..."></textarea></div>
+          <div class="pf-group"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="pf-travel"> Available for Doctor-to-Patient Travel Program</label></div>
+          <div style="display:flex;align-items:center;margin-top:8px;">
+            <button type="submit" class="pf-save">Save Profile</button>
+            <span class="pf-saved" id="save-confirm">✓ Profile saved!</span>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="section" id="sec-settings">
+      <div class="dash-header"><h1>Account Settings</h1></div>
+      <div class="card"><h3>Account</h3>
+        <div class="pf-group"><label>Email</label><input id="set-email" readonly style="background:#f5f5f5;"></div>
+        <div class="pf-group"><label>Current Plan</label><div id="set-plan" style="font-size:16px;font-weight:700;"></div></div>
+        <div style="margin-top:16px"><a href="/for-doctors" style="color:var(--gold-dark);font-weight:600;">View plan options & upgrade →</a></div>
+      </div>
+      <div class="card" style="border-color:#e74c3c33;"><h3 style="color:#e74c3c;">Danger Zone</h3>
+        <button onclick="if(confirm('Delete your account? This cannot be undone.')){localStorage.removeItem('elitemd_doctor');localStorage.removeItem('elitemd_logged_in');window.location.href='/';}" style="padding:10px 20px;background:#e74c3c;color:white;border:none;border-radius:var(--radius);cursor:pointer;font-weight:600;">Delete Account</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// Load doctor data
+var doc;
+try { doc = JSON.parse(localStorage.getItem('elitemd_doctor') || 'null'); } catch(e){ doc = null; }
+if(!doc) { window.location.href = '/doctor-signup'; }
+
+var plan = (doc && doc.plan) || 'free';
+var fullName = doc ? ('Dr. ' + (doc.firstName || '') + ' ' + (doc.lastName || '')).trim() : 'Doctor';
+if(fullName === 'Dr.') fullName = 'Doctor';
+
+// Populate sidebar
+document.getElementById('sidebar-name').textContent = fullName;
+document.getElementById('sidebar-spec').textContent = (doc && doc.specialty) || 'Complete your profile';
+
+// Welcome
+document.getElementById('welcome-msg').textContent = 'Welcome, ' + fullName;
+
+// Plan badge
+var pb = document.getElementById('plan-display');
+pb.textContent = plan.toUpperCase();
+pb.className = 'plan-badge plan-' + plan;
+
+// Stats
+var views = doc.profileViews || Math.floor(Math.random()*200)+20;
+var rank = doc.searchRanking || Math.floor(Math.random()*50)+1;
+document.getElementById('stat-leads').textContent = plan === 'free' ? '0' : Math.floor(Math.random()*12)+1;
+document.getElementById('stat-msgs').textContent = plan === 'free' ? '0' : Math.floor(Math.random()*5);
+document.getElementById('stat-views').textContent = views;
+document.getElementById('stat-rank').textContent = '#' + rank;
+document.getElementById('stat-rank-note').textContent = 'In ' + ((doc && doc.specialty) || 'your specialty');
+
+// Profile completeness
+var fields = ['firstName','lastName','specialty','city','state','education','fellowship','bio','boardCerts','phone','practice','yearsExp'];
+var filled = 0;
+fields.forEach(function(f){ if(doc[f] && doc[f].toString().trim()) filled++; });
+var pct = Math.round((filled/fields.length)*100);
+document.getElementById('completeness-bar').innerHTML = '<div style="background:var(--border);border-radius:100px;height:8px;margin-bottom:8px;"><div style="background:linear-gradient(90deg,var(--gold),var(--green));height:100%;border-radius:100px;width:'+pct+'%;transition:width .5s;"></div></div><p style="font-size:13px;color:var(--text-secondary);">'+pct+'% complete — '+(filled)+'/'+fields.length+' fields filled. <a href="#" onclick="showSection(\'profile\');return false" style="color:var(--gold-dark);font-weight:600;">Complete your profile →</a></p>';
+
+// LEADS
+function renderLeads(){
+  var el = document.getElementById('leads-content');
+  if(plan === 'free'){
+    el.innerHTML = '<div class="empty"><h4>No leads yet</h4><p>Your free plan includes 5 leads per month. As patients discover your profile on EliteMD, their inquiries will appear here.</p><p style="margin-top:16px;"><a href="/for-doctors" style="color:var(--gold-dark);font-weight:600;">Upgrade to Premium for unlimited leads →</a></p></div>';
+    return;
+  }
+  var leads = [
+    {name:'Sarah M.',condition:'ACL Tear',date:'Today',status:'new',loc:'Dallas, TX'},
+    {name:'James R.',condition:'Knee Pain',date:'Yesterday',status:'new',loc:'Austin, TX'},
+    {name:'Maria L.',condition:'Shoulder Injury',date:'2 days ago',status:'pending',loc:'Houston, TX'},
+    {name:'Robert K.',condition:'Back Pain',date:'3 days ago',status:'replied',loc:'San Antonio, TX'},
+    {name:'Emily W.',condition:'Joint Replacement',date:'1 week ago',status:'closed',loc:'Phoenix, AZ'},
+  ];
+  var h='<table><thead><tr><th>Patient</th><th>Condition</th><th>Location</th><th>Date</th><th>Status</th></tr></thead><tbody>';
+  leads.forEach(function(l){
+    h+='<tr><td><strong>'+l.name+'</strong></td><td>'+l.condition+'</td><td>'+l.loc+'</td><td>'+l.date+'</td><td><span class="badge badge-'+l.status+'">'+l.status.charAt(0).toUpperCase()+l.status.slice(1)+'</span></td></tr>';
+  });
+  h+='</tbody></table>';
+  el.innerHTML=h;
+}
+
+// MESSAGES
+function renderMessages(){
+  var el = document.getElementById('messages-content');
+  if(plan === 'free'){
+    el.innerHTML = '<div class="card"><div class="empty"><h4>Messaging locked</h4><p>Upgrade to Premium to access patient messages and communicate directly with prospective patients.</p><p style="margin-top:16px;"><a href="/for-doctors" style="color:var(--gold-dark);font-weight:600;">Upgrade to Premium →</a></p></div></div>';
+    return;
+  }
+  var msgs = [
+    {from:'Sarah M.',preview:'Hi Doctor, I was referred to you for my ACL injury and would like to schedule...','time':'2h ago',unread:true,init:'SM'},
+    {from:'James R.',preview:'I have been experiencing knee pain for the past 3 months and my PCP suggested...','time':'5h ago',unread:true,init:'JR'},
+    {from:'Maria L.',preview:'Thank you for the consultation information. I would like to proceed with...','time':'1d ago',unread:false,init:'ML'},
+  ];
+  var h='';
+  msgs.forEach(function(m){
+    h+='<div class="msg-item'+(m.unread?' unread':'')+'"><div class="msg-avatar">'+m.init+'</div><div class="msg-body"><div class="msg-from">'+m.from+'</div><div class="msg-preview">'+m.preview+'</div></div><div class="msg-time">'+m.time+'</div></div>';
+  });
+  el.innerHTML=h;
+}
+
+// ANALYTICS
+function renderAnalytics(){
+  var el = document.getElementById('analytics-content');
+  if(plan === 'free'){
+    el.innerHTML = '<div class="card"><div class="empty"><h4>Analytics locked</h4><p>Upgrade to Premium to see detailed profile analytics including views, conversion rates, and search ranking trends.</p><p style="margin-top:16px;"><a href="/for-doctors" style="color:var(--gold-dark);font-weight:600;">Upgrade to Premium →</a></p></div></div>';
+    return;
+  }
+  el.innerHTML = '<div class="stats-row"><div class="stat-card"><div class="stat-label">Profile Views (30d)</div><div class="stat-value">'+views+'</div></div><div class="stat-card"><div class="stat-label">Inquiry Rate</div><div class="stat-value">'+(Math.random()*5+2).toFixed(1)+'%</div></div><div class="stat-card"><div class="stat-label">Search Rank</div><div class="stat-value">#'+rank+'</div></div><div class="stat-card"><div class="stat-label">Response Time</div><div class="stat-value">&lt;4h</div></div></div><div class="card"><h3>Top Search Terms Leading to Your Profile</h3><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;">1. '+((doc.specialty||'specialist')+' '+(doc.city||'')).trim()+'<br>2. best '+(doc.specialty||'doctor').toLowerCase()+' '+(doc.state||'')+'<br>3. '+(doc.specialty||'doctor').toLowerCase()+' near me<br>4. top rated '+(doc.specialty||'doctor').toLowerCase()+'</p></div>';
+}
+
+// PROFILE FORM
+function loadProfile(){
+  var f = {
+    'pf-first': doc.firstName||'',
+    'pf-last': doc.lastName||'',
+    'pf-spec': doc.specialty||'',
+    'pf-sub': doc.subSpecialty||'',
+    'pf-city': doc.city||'',
+    'pf-state': doc.state||'',
+    'pf-phone': doc.phone||'',
+    'pf-practice': doc.practice||'',
+    'pf-years': doc.yearsExp||'',
+    'pf-npi': doc.npi||'',
+    'pf-certs': doc.boardCerts||'',
+    'pf-school': doc.education||'',
+    'pf-fellow': doc.fellowship||'',
+    'pf-bio': doc.bio||''
+  };
+  Object.keys(f).forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.value=f[id];
+  });
+  var tEl = document.getElementById('pf-travel');
+  if(tEl) tEl.checked = !!doc.willTravel;
+}
+
+document.getElementById('profile-form').addEventListener('submit', function(e){
+  e.preventDefault();
+  doc.firstName = document.getElementById('pf-first').value.trim();
+  doc.lastName = document.getElementById('pf-last').value.trim();
+  doc.specialty = document.getElementById('pf-spec').value;
+  doc.subSpecialty = document.getElementById('pf-sub').value.trim();
+  doc.city = document.getElementById('pf-city').value.trim();
+  doc.state = document.getElementById('pf-state').value.trim();
+  doc.phone = document.getElementById('pf-phone').value.trim();
+  doc.practice = document.getElementById('pf-practice').value.trim();
+  doc.yearsExp = document.getElementById('pf-years').value;
+  doc.boardCerts = document.getElementById('pf-certs').value.trim();
+  doc.education = document.getElementById('pf-school').value.trim();
+  doc.fellowship = document.getElementById('pf-fellow').value.trim();
+  doc.bio = document.getElementById('pf-bio').value.trim();
+  doc.willTravel = document.getElementById('pf-travel').checked;
+  
+  try { localStorage.setItem('elitemd_doctor', JSON.stringify(doc)); } catch(e){}
+  
+  // Update sidebar
+  var fn = ('Dr. '+(doc.firstName||'')+' '+(doc.lastName||'')).trim();
+  document.getElementById('sidebar-name').textContent = fn;
+  document.getElementById('sidebar-spec').textContent = doc.specialty||'';
+  
+  var sc = document.getElementById('save-confirm');
+  sc.style.display = 'inline';
+  setTimeout(function(){sc.style.display='none';},3000);
+});
+
+// SETTINGS
+document.getElementById('set-email').value = (doc && doc.email) || '';
+document.getElementById('set-plan').textContent = (plan||'free').charAt(0).toUpperCase() + (plan||'free').slice(1) + (plan==='premium'?' — $299/mo':plan==='elite'?' — $799/mo':' — $0/mo');
+
+// NAV
+function showSection(name){
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active')});
+  document.getElementById('sec-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active')});
+  event.target.closest('.nav-item').classList.add('active');
+}
+
+function logout(){
+  try{localStorage.removeItem('elitemd_logged_in');}catch(e){}
+  window.location.href='/';
+}
+
+// Init
+renderLeads();
+renderMessages();
+renderAnalytics();
+loadProfile();
+</script>
+</body>
+</html>

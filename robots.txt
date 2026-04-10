@@ -1,0 +1,47 @@
+# EliteMD - The Doctor Directory
+# https://thedoctordirectory.com
+
+User-agent: *
+Allow: /
+Disallow: /doctor-portal
+Disallow: /dashboard
+
+# Sitemaps
+Sitemap: https://thedoctordirectory.com/sitemap.xml
+
+# IndexNow Key
+# https://thedoctordirectory.com/70abe020d62240838dd426d99f0e5852.txt
+
+# AI Crawlers - Welcome
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /

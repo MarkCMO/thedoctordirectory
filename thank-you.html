@@ -1,0 +1,71 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Message Received | EliteMD - The Doctor Directory</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.ty-page{min-height:100vh;display:flex;flex-direction:column;}
+.ty-main{flex:1;display:flex;align-items:center;justify-content:center;padding:60px 24px;}
+.ty-card{max-width:560px;width:100%;text-align:center;}
+.ty-icon{width:80px;height:80px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 28px;}
+.ty-icon svg{width:40px;height:40px;color:var(--green);}
+.ty-card h1{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,38px);font-weight:700;color:var(--text-primary);margin-bottom:14px;}
+.ty-card p{font-size:16px;color:var(--text-secondary);line-height:1.7;margin-bottom:12px;}
+.ty-card .ty-note{font-size:14px;color:var(--text-muted);margin-top:8px;margin-bottom:32px;}
+.ty-actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:24px;}
+.ty-actions a{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;text-decoration:none;transition:all .2s;}
+.ty-btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--navy);}
+.ty-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(200,164,94,.4);}
+.ty-btn-secondary{background:var(--white);color:var(--text-primary);border:1px solid var(--border);}
+.ty-btn-secondary:hover{border-color:var(--gold);color:var(--gold-dark);}
+.ty-features{display:flex;gap:32px;justify-content:center;margin-top:48px;flex-wrap:wrap;}
+.ty-feat{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);}
+.ty-feat svg{width:16px;height:16px;color:var(--green);}
+@media(max-width:600px){
+  .ty-actions{flex-direction:column;align-items:stretch;}
+  .ty-actions a{justify-content:center;}
+  .ty-features{flex-direction:column;align-items:center;gap:12px;}
+}
+</style>
+</head><body>
+<header class="site-header"><div class="header-inner">
+<a href="/" class="logo"><div class="logo-mark"><span>E</span><span class="mark-plus">+</span></div><div class="logo-text-wrap"><div class="logo-name">Elite<span>MD</span></div><div class="logo-tagline">The Doctor Directory</div></div></a>
+<nav class="nav-links"><a href="/">Home</a><a href="/find-a-doctor">Find a Doctor</a><a href="/specialties/">Specialties</a><a href="/for-doctors">For Doctors</a><a href="/doctor-signup" class="nav-cta">Doctor Login</a></nav>
+<button class="mobile-menu-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button></div></header>
+
+<div class="ty-page">
+  <div class="ty-main">
+    <div class="ty-card">
+      <div class="ty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h1>Thank You!</h1>
+      <p>Your message has been received. Our patient concierge team will review your inquiry and respond within 24 hours.</p>
+      <p class="ty-note">For urgent medical needs, please call 911 or visit your nearest emergency room.</p>
+      <div class="ty-actions">
+        <a href="/find-a-doctor" class="ty-btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+          Find a Doctor
+        </a>
+        <a href="/" class="ty-btn-secondary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Back to Home
+        </a>
+      </div>
+      <div class="ty-features">
+        <div class="ty-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> HIPAA Compliant</div>
+        <div class="ty-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 24hr Response</div>
+        <div class="ty-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Encrypted</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer"><div class="footer-inner"><div class="footer-grid">
+<div class="footer-brand"><a href="/" class="logo"><div class="logo-mark"><span>E</span><span class="mark-plus">+</span></div><div class="logo-text-wrap"><div class="logo-name">Elite<span>MD</span></div><div class="logo-tagline">The Doctor Directory</div></div></a><p>The Doctor Directory - A curated directory of the world's best doctors. Peer-verified. Innovation-tracked. Concierge-connected.</p></div>
+<div class="footer-col"><h5>Top Specialties</h5><a href="/specialties/bariatric-surgery">Bariatric Surgery</a><a href="/specialties/cardiothoracic-surgery">Cardiothoracic Surgery</a><a href="/specialties/dermatology">Dermatology</a><a href="/specialties/ent-surgery">ENT Surgery</a><a href="/specialties/gastroenterology">Gastroenterology</a><a href="/specialties/neurosurgery">Neurosurgery</a></div>
+<div class="footer-col"><h5>Top Conditions</h5><a href="/conditions/acl-tear">ACL Tear</a><a href="/conditions/acne">Acne</a><a href="/conditions/aneurysm">Aneurysm</a><a href="/conditions/ankylosing-spondylitis">Ankylosing Spondylitis</a><a href="/conditions/aortic-aneurysm">Aortic Aneurysm</a><a href="/conditions/arthritis">Arthritis</a></div>
+<div class="footer-col"><h5>Company</h5><a href="/about">About</a><a href="/for-doctors">For Doctors</a><a href="/doctor-signup">Doctor Login</a><a href="/how-it-works">How It Works</a><a href="/privacy-policy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a></div>
+</div><div class="footer-bottom"><p>&copy; 2026 EliteMD - The Doctor Directory. All rights reserved.</p><div class="footer-links"><a href="/privacy-policy">Privacy</a><a href="/terms">Terms</a><a href="/hipaa">HIPAA</a></div></div></div></footer>
+<script src="/assets/js/main.js"></script>
+</body></html>

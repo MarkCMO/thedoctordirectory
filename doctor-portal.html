@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Doctor Portal - Sign Up or Log In | EliteMD - The Doctor Directory</title>
+<meta name="description" content="Access your EliteMD doctor dashboard. Sign up for a new account or log in to manage your profile, patient leads, and messages.">
+<link rel="canonical" href="https://thedoctordirectory.com/doctor-portal">
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.portal-page{min-height:100vh;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;position:relative;overflow:hidden;}
+.portal-page::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(200,164,94,.06),transparent),radial-gradient(ellipse 50% 60% at 50% 100%,rgba(45,139,95,.04),transparent);}
+.portal-content{position:relative;z-index:1;text-align:center;max-width:560px;width:100%;}
+.portal-logo{display:inline-flex;align-items:center;gap:14px;text-decoration:none;margin-bottom:48px;}
+.portal-logo .p-mark{width:48px;height:48px;background:linear-gradient(145deg,var(--gold),var(--gold-dark));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:800;font-size:24px;color:var(--navy);box-shadow:0 4px 16px rgba(200,164,94,.3);}
+.portal-logo .p-wrap{display:flex;flex-direction:column;gap:2px;text-align:left;}
+.portal-logo .p-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--white);}
+.portal-logo .p-name span{color:var(--gold);}
+.portal-logo .p-tag{font-family:'DM Sans',sans-serif;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:500;}
+.portal-title{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,38px);font-weight:700;color:var(--white);margin-bottom:12px;line-height:1.2;}
+.portal-sub{font-size:16px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:44px;}
+
+/* Gate overlay */
+.gate-overlay{position:relative;z-index:10;max-width:420px;width:100%;margin:0 auto;}
+.gate-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-lg);padding:40px 32px;backdrop-filter:blur(8px);}
+.gate-card h2{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--white);margin-bottom:8px;}
+.gate-card .gate-sub{font-size:14px;color:rgba(255,255,255,.4);margin-bottom:28px;line-height:1.5;}
+.gate-input-wrap{position:relative;margin-bottom:16px;}
+.gate-input{width:100%;padding:14px 18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:15px;color:var(--white);outline:none;transition:border-color .2s;box-sizing:border-box;}
+.gate-input::placeholder{color:rgba(255,255,255,.25);}
+.gate-input:focus{border-color:var(--gold);}
+.gate-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--navy);border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;}
+.gate-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(200,164,94,.4);}
+.gate-error{color:#e74c3c;font-size:13px;margin-top:12px;display:none;}
+.gate-footer{margin-top:24px;font-size:13px;color:rgba(255,255,255,.3);}
+.gate-footer a{color:rgba(200,164,94,.6);text-decoration:none;}
+.gate-footer a:hover{color:var(--gold);}
+.gate-lock-icon{width:56px;height:56px;background:rgba(200,164,94,.1);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
+
+/* Portal content (hidden until unlocked) */
+.portal-inner{display:none;}
+.portal-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:40px;}
+.portal-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-lg);padding:36px 28px;text-align:center;text-decoration:none;transition:all .25s;cursor:pointer;}
+.portal-card:hover{background:rgba(255,255,255,.07);border-color:rgba(200,164,94,.3);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.2);}
+.portal-card .pc-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
+.portal-card.signup .pc-icon{background:rgba(200,164,94,.12);}
+.portal-card.login .pc-icon{background:rgba(45,139,95,.12);}
+.portal-card .pc-icon svg{width:28px;height:28px;}
+.portal-card h3{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--white);margin-bottom:10px;}
+.portal-card p{font-size:14px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:20px;}
+.portal-card .pc-btn{display:inline-block;padding:12px 28px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;transition:all .2s;text-decoration:none;}
+.portal-card.signup .pc-btn{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--navy);}
+.portal-card.signup .pc-btn:hover{box-shadow:0 4px 16px rgba(200,164,94,.4);}
+.portal-card.login .pc-btn{background:rgba(255,255,255,.1);color:var(--white);border:1px solid rgba(255,255,255,.15);}
+.portal-card.login .pc-btn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.25);}
+.portal-footer{font-size:14px;color:rgba(255,255,255,.3);}
+.portal-footer a{color:rgba(200,164,94,.6);text-decoration:none;}
+.portal-footer a:hover{color:var(--gold);}
+.portal-features{display:flex;gap:28px;justify-content:center;margin-bottom:44px;flex-wrap:wrap;}
+.portal-feat{display:flex;align-items:center;gap:8px;font-size:13px;color:rgba(255,255,255,.4);}
+.portal-feat svg{width:16px;height:16px;color:var(--gold);flex-shrink:0;}
+@media(max-width:600px){
+  .portal-cards{grid-template-columns:1fr;}
+  .portal-page{padding:32px 20px;justify-content:flex-start;padding-top:60px;}
+  .portal-features{flex-direction:column;align-items:center;gap:12px;}
+  .gate-card{padding:32px 24px;}
+}
+</style>
+</head>
+<body>
+<div class="portal-page">
+  <div class="portal-content">
+    <a href="/" class="portal-logo">
+      <div class="p-mark">E</div>
+      <div class="p-wrap"><div class="p-name">Elite<span>MD</span></div><div class="p-tag">The Doctor Directory</div></div>
+    </a>
+
+    <h1 class="portal-title">Doctor Portal</h1>
+    <p class="portal-sub">Manage your profile, patient leads, and messages. Enter your access code to continue.</p>
+
+    <!-- Password Gate -->
+    <div class="gate-overlay" id="gate">
+      <div class="gate-card">
+        <div class="gate-lock-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8A45E" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
+        <h2>Access Required</h2>
+        <p class="gate-sub">Enter your doctor access code to view the portal. If you don't have one, contact our team.</p>
+        <form id="gateForm" onsubmit="return checkAccess(event)">
+          <div class="gate-input-wrap">
+            <input type="password" class="gate-input" id="accessCode" placeholder="Enter access code" autocomplete="off" required>
+          </div>
+          <button type="submit" class="gate-btn">Unlock Portal</button>
+          <p class="gate-error" id="gateError">Invalid access code. Please try again or contact support.</p>
+        </form>
+        <div class="gate-footer">
+          <a href="/contact">Need an access code?</a> &nbsp;|&nbsp; <a href="/">Back to EliteMD</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portal content (shown after unlock) -->
+    <div class="portal-inner" id="portalInner">
+      <div class="portal-features">
+        <div class="portal-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg> NPI Verified</div>
+        <div class="portal-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> HIPAA Compliant</div>
+        <div class="portal-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Qualified Leads</div>
+      </div>
+
+      <div class="portal-cards">
+        <a href="/doctor-signup#signup" class="portal-card signup">
+          <div class="pc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#C8A45E" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg></div>
+          <h3>New Doctor?</h3>
+          <p>Create a free account. Set up your profile, choose your plan, and start receiving patient leads.</p>
+          <div class="pc-btn">Create Account</div>
+        </a>
+        <a href="/doctor-signup#login" class="portal-card login">
+          <div class="pc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#2D8B5F" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg></div>
+          <h3>Existing Doctor?</h3>
+          <p>Log in to your dashboard to view leads, respond to patients, and manage your profile.</p>
+          <div class="pc-btn">Log In</div>
+        </a>
+      </div>
+
+      <div class="portal-footer">
+        <a href="/">Back to EliteMD</a> &nbsp;|&nbsp; <a href="/for-doctors">View Plans & Pricing</a> &nbsp;|&nbsp; <a href="/contact">Need Help?</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Access code - set this in Netlify env or change here
+var PORTAL_CODE = 'EliteMD2026';
+
+function checkAccess(e) {
+  e.preventDefault();
+  var code = document.getElementById('accessCode').value.trim();
+  if (code === PORTAL_CODE) {
+    sessionStorage.setItem('elitemd_portal_access', 'true');
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('portalInner').style.display = 'block';
+  } else {
+    document.getElementById('gateError').style.display = 'block';
+    document.getElementById('accessCode').style.borderColor = '#e74c3c';
+    setTimeout(function() {
+      document.getElementById('gateError').style.display = 'none';
+      document.getElementById('accessCode').style.borderColor = '';
+    }, 3000);
+  }
+  return false;
+}
+
+// Check if already unlocked this session
+try {
+  if (sessionStorage.getItem('elitemd_portal_access') === 'true') {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('portalInner').style.display = 'block';
+  }
+} catch(e){}
+
+// If already logged in, go straight to dashboard
+try {
+  if(localStorage.getItem('elitemd_logged_in') === 'true' && localStorage.getItem('elitemd_doctor')) {
+    window.location.href = '/dashboard';
+  }
+} catch(e){}
+</script>
+</body>
+</html>
