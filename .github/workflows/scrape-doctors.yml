@@ -1,0 +1,33 @@
+name: Scrape Doctors (Weekly)
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      state:
+        description: '2-letter state code (e.g. NY). Leave blank to auto-rotate.'
+        required: false
+      limit:
+        description: 'Max new doctors to add this run'
+        required: false
+        default: '500'
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install @supabase/supabase-js
+        run: npm install --no-save @supabase/supabase-js@^2.45.0
+      - name: Run scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STATE: ${{ github.event.inputs.state }}
+          LIMIT: ${{ github.event.inputs.limit || '500' }}
+        run: node scripts/scrape-and-upsert.js
