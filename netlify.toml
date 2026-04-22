@@ -1,16 +1,67 @@
 [build]
   publish = "."
+  functions = "netlify/functions"
 
 [build.processing.html]
   pretty_urls = true
 
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["@supabase/supabase-js", "bcryptjs"]
+
+# API redirects
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Scheduled functions
+[functions."admin-keepwarm"]
+  schedule = "*/5 * * * *"
+
+[functions."admin-health-monitor"]
+  schedule = "*/15 * * * *"
+
+[functions."email-cron"]
+  schedule = "0 * * * *"
+
+[functions."cleanup-cron"]
+  schedule = "0 5 * * *"
+
+# Headers
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
 
 [[headers]]
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/admin"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/admin.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/my-listing*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/rep-dashboard*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"

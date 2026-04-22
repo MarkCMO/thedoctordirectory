@@ -1,0 +1,11 @@
+{
+  "name": "thedoctordirectory",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Doctor Directory - doctor directory + lead gen + CRM",
+  "engines": { "node": "22" },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "bcryptjs": "^2.4.3"
+  }
+}

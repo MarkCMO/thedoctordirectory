@@ -1,0 +1,170 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Claim Your Listing | The Doctor Directory</title>
+<meta name="description" content="Claim your doctor profile on The Doctor Directory. Verify ownership via email, then manage your listing.">
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+body { background: #f7f5f0; }
+.claim-wrap { max-width: 520px; margin: 60px auto; padding: 0 24px; }
+.claim-card { background: #fff; border: 1px solid #e5e1d6; border-radius: 10px; padding: 36px; }
+.claim-card h1 { font-family: 'Playfair Display', serif; font-size: 26px; color: #0b1a2f; margin: 0 0 6px; }
+.claim-card .sub { color: #6b6558; font-size: 14px; margin-bottom: 24px; }
+.steps { display: flex; gap: 6px; margin-bottom: 28px; }
+.step { flex: 1; height: 4px; border-radius: 2px; background: #e5e1d6; }
+.step.active { background: #C8A45E; }
+.step.done { background: #1b7a2e; }
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: #6b6558; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.field input { width: 100%; padding: 12px; border: 1px solid #c8c0ae; border-radius: 6px; font-size: 15px; box-sizing: border-box; }
+.btn { display: block; width: 100%; padding: 14px; border-radius: 6px; border: none; background: #C8A45E; color: #0b1a2f; font-size: 15px; font-weight: 600; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.err { color: #c4432a; font-size: 13px; margin-top: 8px; }
+.ok { color: #1b7a2e; font-size: 13px; margin-top: 8px; }
+.code-input { letter-spacing: 12px; font-size: 24px; text-align: center; font-family: monospace; }
+.listing-preview { background: #faf8f3; padding: 14px 16px; border-radius: 6px; margin-bottom: 20px; border-left: 3px solid #C8A45E; }
+.listing-preview strong { display: block; color: #0b1a2f; }
+.listing-preview span { color: #6b6558; font-size: 13px; }
+</style></head>
+<body>
+<div class="claim-wrap">
+  <div class="claim-card">
+    <div id="app"></div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let SLUG = new URLSearchParams(location.search).get('slug') || '';
+let STEP = 'lookup';  // lookup | request | verify | password | done
+let LISTING = null;
+let EMAIL = '';
+let CODE = '';
+
+function esc(s) { return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function init() {
+  if (!SLUG) { renderLookup(); return; }
+  try {
+    const r = await fetch(API + `/facility-lookup?slug=${encodeURIComponent(SLUG)}`);
+    if (r.ok) {
+      LISTING = await r.json();
+      if (LISTING.claimed) {
+        render(`<h1>Already Claimed</h1>
+                <p>This listing has already been claimed.</p>
+                <div class="listing-preview"><strong>${esc(LISTING.name)}</strong>
+                  <span>${esc(LISTING.specialty || '')} · ${esc(LISTING.city || '')}, ${esc(LISTING.state || '')}</span></div>
+                <a class="btn" href="/my-listing?slug=${encodeURIComponent(SLUG)}" style="text-decoration:none;text-align:center;display:block">Sign In to Dashboard</a>`);
+        return;
+      }
+      STEP = 'request';
+      render(renderRequest());
+    } else renderLookup();
+  } catch { renderLookup(); }
+}
+
+function renderLookup() {
+  render(`
+    <h1>Claim Your Listing</h1>
+    <p class="sub">Enter your listing slug to get started. If you don't know it, find your listing in the <a href="/find-a-doctor" style="color:#8a6a34">directory</a> first - the URL ends with your slug.</p>
+    <div class="field"><label>Listing Slug</label><input id="lu-slug" placeholder="dr-firstname-lastname-id"></div>
+    <button class="btn" onclick="location.search='?slug='+document.getElementById('lu-slug').value.trim()">Continue</button>
+  `);
+}
+
+function renderRequest() {
+  return `
+    <h1>Claim: ${esc(LISTING.name)}</h1>
+    <p class="sub">We'll send a 6-digit verification code to confirm you're the doctor or an authorized representative.</p>
+    <div class="listing-preview">
+      <strong>${esc(LISTING.name)}</strong>
+      <span>${esc(LISTING.specialty || '')} · ${esc(LISTING.city || '')}, ${esc(LISTING.state || '')}</span>
+    </div>
+    <div class="steps"><div class="step active"></div><div class="step"></div><div class="step"></div></div>
+    <div class="field"><label>Your Email</label><input id="req-email" type="email" placeholder="doctor@example.com"></div>
+    <div class="field"><label>Phone (optional)</label><input id="req-phone" type="tel"></div>
+    <div class="field"><label>Your Name (optional)</label><input id="req-name"></div>
+    <button class="btn" onclick="sendCode()">Send Verification Code</button>
+    <div id="r-msg"></div>
+    <p style="text-align:center;margin-top:16px;font-size:13px;color:#6b6558">${LISTING.contactEmailMasked ? `We'll send the code to our records on file if your email matches, otherwise to the email you entered.` : ''}</p>
+  `;
+}
+
+async function sendCode() {
+  EMAIL = document.getElementById('req-email').value.trim().toLowerCase();
+  const phone = document.getElementById('req-phone').value;
+  const name = document.getElementById('req-name').value;
+  const msg = document.getElementById('r-msg');
+  if (!EMAIL) { msg.innerHTML = '<div class="err">Email required</div>'; return; }
+  msg.innerHTML = '<div style="color:#6b6558">Sending...</div>';
+
+  const r = await fetch(API + '/facility-claim', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ step: 'request', slug: SLUG, email: EMAIL, phone, name })
+  });
+  const data = await r.json();
+  if (!r.ok) { msg.innerHTML = `<div class="err">${esc(data.error || 'Failed')}</div>`; return; }
+  STEP = 'verify';
+  render(renderVerify());
+}
+
+function renderVerify() {
+  return `
+    <h1>Enter Your Code</h1>
+    <p class="sub">We emailed a 6-digit code to <strong>${esc(EMAIL)}</strong>. Code expires in 30 minutes.</p>
+    <div class="steps"><div class="step done"></div><div class="step active"></div><div class="step"></div></div>
+    <div class="field"><label>Verification Code</label>
+      <input id="v-code" class="code-input" maxlength="6" inputmode="numeric" pattern="\\d*">
+    </div>
+    <button class="btn" onclick="verifyCode()">Verify Code</button>
+    <p style="text-align:center;margin-top:12px;font-size:13px"><a href="#" onclick="STEP='request';render(renderRequest());return false;" style="color:#8a6a34">Change email or resend</a></p>
+    <div id="v-msg"></div>
+  `;
+}
+
+async function verifyCode() {
+  CODE = document.getElementById('v-code').value.trim();
+  const msg = document.getElementById('v-msg');
+  if (CODE.length !== 6) { msg.innerHTML = '<div class="err">6-digit code required</div>'; return; }
+  msg.innerHTML = '<div style="color:#6b6558">Verifying...</div>';
+  const r = await fetch(API + '/facility-claim', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ step: 'verify', slug: SLUG, email: EMAIL, code: CODE })
+  });
+  const data = await r.json();
+  if (!r.ok) { msg.innerHTML = `<div class="err">${esc(data.error || 'Invalid code')}</div>`; return; }
+  STEP = 'password';
+  render(renderPassword());
+}
+
+function renderPassword() {
+  return `
+    <h1>Set Your Password</h1>
+    <p class="sub">Create a password to manage your listing. Minimum 8 characters.</p>
+    <div class="steps"><div class="step done"></div><div class="step done"></div><div class="step active"></div></div>
+    <div class="field"><label>New Password</label><input id="p-pass" type="password" placeholder="Min 8 characters"></div>
+    <div class="field"><label>Confirm Password</label><input id="p-pass2" type="password"></div>
+    <button class="btn" onclick="setPassword()">Complete Claim</button>
+    <div id="p-msg"></div>
+  `;
+}
+
+async function setPassword() {
+  const p1 = document.getElementById('p-pass').value;
+  const p2 = document.getElementById('p-pass2').value;
+  const msg = document.getElementById('p-msg');
+  if (p1.length < 8) { msg.innerHTML = '<div class="err">8+ characters required</div>'; return; }
+  if (p1 !== p2) { msg.innerHTML = '<div class="err">Passwords don\'t match</div>'; return; }
+  msg.innerHTML = 'Working...';
+  const r = await fetch(API + '/facility-claim', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ step: 'set-password', slug: SLUG, email: EMAIL, code: CODE, password: p1 })
+  });
+  const data = await r.json();
+  if (!r.ok) { msg.innerHTML = `<div class="err">${esc(data.error || 'Failed')}</div>`; return; }
+  location.href = data.redirect || `/my-listing?slug=${SLUG}&token=${data.accessToken}`;
+}
+
+function render(html) { document.getElementById('app').innerHTML = html; }
+init();
+</script>
+</body></html>

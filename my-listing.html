@@ -1,0 +1,284 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>My Dashboard | The Doctor Directory</title>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+body { background: #f7f5f0; }
+.owner-wrap { max-width: 1000px; margin: 40px auto; padding: 0 24px; }
+.owner-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.owner-header h1 { font-family: 'Playfair Display', serif; font-size: 28px; color: #0b1a2f; margin: 0; }
+.plan-badge { padding: 4px 14px; border-radius: 14px; font-size: 13px; font-weight: 600; }
+.plan-free { background: #eee; color: #555; }
+.plan-premium { background: #e7efff; color: #2a5db8; }
+.plan-elite { background: #fff2d6; color: #8a6a34; }
+.plan-sponsor { background: #ffd9d0; color: #c4432a; }
+.card { background: #fff; border: 1px solid #e5e1d6; border-radius: 8px; padding: 24px; margin-bottom: 16px; }
+.card h3 { font-family: 'Playfair Display', serif; margin: 0 0 16px; color: #0b1a2f; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.stat { background: #faf8f3; padding: 14px; border-radius: 6px; text-align: center; }
+.stat-num { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #0b1a2f; }
+.stat-label { font-size: 11px; color: #6b6558; text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
+.field-row { margin-bottom: 14px; }
+.field-row label { display: block; font-size: 12px; font-weight: 600; color: #6b6558; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.field-row input, .field-row textarea { width: 100%; padding: 10px 12px; border: 1px solid #c8c0ae; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+.field-row textarea { min-height: 80px; font-family: inherit; }
+.btn { display: inline-block; padding: 10px 20px; border-radius: 6px; border: 1px solid #c8c0ae; background: #fff; color: #0b1a2f; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn-primary { background: #C8A45E; border-color: #C8A45E; color: #0b1a2f; }
+.lead-row { padding: 14px 0; border-bottom: 1px solid #e5e1d6; }
+.lead-row:last-child { border-bottom: none; }
+.lead-name { font-weight: 600; color: #0b1a2f; }
+.lead-meta { font-size: 12px; color: #6b6558; margin-top: 2px; }
+.lead-message { margin-top: 10px; padding: 10px; background: #faf8f3; border-left: 3px solid #C8A45E; border-radius: 4px; font-size: 13px; }
+.tab-nav { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e5e1d6; }
+.tab-nav button { padding: 10px 18px; background: none; border: none; font-size: 14px; cursor: pointer; color: #6b6558; font-weight: 500; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+.tab-nav button.active { color: #C8A45E; border-bottom-color: #C8A45E; }
+.login-box { max-width: 400px; margin: 100px auto; background: #fff; padding: 32px; border-radius: 8px; border: 1px solid #e5e1d6; }
+.err { color: #c4432a; font-size: 13px; margin-top: 8px; }
+.ok { color: #1b7a2e; font-size: 13px; margin-top: 8px; }
+</style>
+</head><body>
+<div id="app"></div>
+
+<script>
+const API = '/api';
+let LISTING = null;
+let LEADS = [];
+let STATS = {};
+let CURRENT = 'overview';
+
+function esc(s) { return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : ''; }
+
+function getQuery() {
+  const p = new URLSearchParams(location.search);
+  return { slug: p.get('slug'), token: p.get('token') };
+}
+
+async function loadDashboard() {
+  const { slug, token } = getQuery();
+  if (!slug) { renderLookup(); return; }
+
+  try {
+    const r = await fetch(API + `/facility-dashboard?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token || '')}`);
+    const data = await r.json();
+    if (!r.ok) { renderLogin(slug); return; }
+    LISTING = data.listing;
+    LEADS = data.leads || [];
+    STATS = data.stats || {};
+    render();
+  } catch { renderLogin(slug); }
+}
+
+function renderLookup() {
+  document.getElementById('app').innerHTML = `
+    <div class="login-box">
+      <h2 style="margin:0 0 20px;font-family:'Playfair Display',serif">Find Your Listing</h2>
+      <p style="font-size:13px;color:#6b6558">Enter your listing slug (example: <code>dr-mark-trolice-6809</code>) or visit <a href="/find-a-doctor">find-a-doctor</a> first.</p>
+      <input id="lu-slug" placeholder="dr-firstname-lastname-id" style="width:100%;padding:10px;margin:10px 0;border:1px solid #c8c0ae;border-radius:6px">
+      <button class="btn btn-primary" style="width:100%" onclick="location.search='?slug='+document.getElementById('lu-slug').value.trim()">Continue</button>
+    </div>`;
+}
+
+function renderLogin(slug) {
+  document.getElementById('app').innerHTML = `
+    <div class="login-box">
+      <h2 style="margin:0 0 20px;font-family:'Playfair Display',serif">Sign In</h2>
+      <p style="font-size:13px;color:#6b6558">Access your dashboard for ${esc(slug)}</p>
+      <div id="li-err"></div>
+      <input type="email" id="li-email" placeholder="Email" style="width:100%;padding:10px;margin:8px 0;border:1px solid #c8c0ae;border-radius:6px;box-sizing:border-box">
+      <input type="password" id="li-pass" placeholder="Password" style="width:100%;padding:10px;margin:8px 0;border:1px solid #c8c0ae;border-radius:6px;box-sizing:border-box">
+      <button class="btn btn-primary" style="width:100%;padding:12px" onclick="doOwnerLogin('${esc(slug)}')">Sign In</button>
+      <p style="text-align:center;margin-top:14px;font-size:13px">Haven't claimed yet? <a href="/claim?slug=${esc(slug)}" style="color:#8a6a34">Claim your listing</a></p>
+    </div>`;
+}
+
+async function doOwnerLogin(slug) {
+  const email = document.getElementById('li-email').value.trim();
+  const password = document.getElementById('li-pass').value;
+  const err = document.getElementById('li-err');
+  err.innerHTML = '';
+  const r = await fetch(API + '/facility-dashboard', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug, email, password })
+  });
+  const data = await r.json();
+  if (!r.ok) { err.innerHTML = `<div class="err">${esc(data.error || 'Failed')}</div>`; return; }
+  LISTING = data.listing;
+  LEADS = data.leads || [];
+  STATS = data.stats || {};
+  if (LISTING.accessToken) {
+    history.replaceState(null, '', `?slug=${slug}&token=${LISTING.accessToken}`);
+  }
+  render();
+}
+
+function render() {
+  const l = LISTING;
+  document.getElementById('app').innerHTML = `
+    <div class="owner-wrap">
+      <div class="owner-header">
+        <div>
+          <h1>${esc(l.name)}</h1>
+          <div style="color:#6b6558;margin-top:4px">${esc(l.specialty || '')} &middot; ${esc(l.city || '')}, ${esc(l.state || '')}</div>
+        </div>
+        <div>
+          <span class="plan-badge plan-${l.plan}">${l.plan.toUpperCase()}</span>
+          ${l.plan === 'free' ? '<button class="btn btn-primary" style="margin-left:10px">Upgrade</button>' : ''}
+        </div>
+      </div>
+
+      <div class="tab-nav">
+        <button onclick="tab('overview')" class="${CURRENT==='overview'?'active':''}">Overview</button>
+        <button onclick="tab('leads')" class="${CURRENT==='leads'?'active':''}">Leads (${LEADS.length})</button>
+        <button onclick="tab('edit')" class="${CURRENT==='edit'?'active':''}">Edit Listing</button>
+        <button onclick="tab('billing')" class="${CURRENT==='billing'?'active':''}">Billing</button>
+        <button onclick="tab('account')" class="${CURRENT==='account'?'active':''}">Account</button>
+      </div>
+
+      <div id="tab-body"></div>
+    </div>`;
+  renderTab();
+}
+
+function tab(t) { CURRENT = t; render(); }
+
+function renderTab() {
+  const body = document.getElementById('tab-body');
+  if (CURRENT === 'overview') body.innerHTML = renderOverview();
+  else if (CURRENT === 'leads') body.innerHTML = renderLeads();
+  else if (CURRENT === 'edit') body.innerHTML = renderEdit();
+  else if (CURRENT === 'billing') body.innerHTML = renderBilling();
+  else if (CURRENT === 'account') body.innerHTML = renderAccount();
+}
+
+function renderOverview() {
+  const l = LISTING;
+  return `
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-num">${STATS.totalLeads || 0}</div><div class="stat-label">Total Leads</div></div>
+      <div class="stat"><div class="stat-num">${STATS.newLeads || 0}</div><div class="stat-label">New Leads</div></div>
+      <div class="stat"><div class="stat-num">${STATS.recentLeads || 0}</div><div class="stat-label">Leads (30d)</div></div>
+      <div class="stat"><div class="stat-num">${l.rating || '-'}</div><div class="stat-label">Avg Rating</div></div>
+      <div class="stat"><div class="stat-num">${l.reviews || 0}</div><div class="stat-label">Reviews</div></div>
+    </div>
+    <div class="card">
+      <h3>Your Public Profile</h3>
+      <p>Your listing is live at <a href="/doctors/${esc(l.slug)}" target="_blank" style="color:#8a6a34">thedoctordirectory.com/doctors/${esc(l.slug)}</a></p>
+      <p style="font-size:13px;color:#6b6558">Patients can find you by searching your specialty, city, or conditions you treat. Upgrade to <strong>Premium</strong> to unlock priority placement, patient inquiry tracking, and analytics.</p>
+    </div>
+    <div class="card">
+      <h3>Recent Leads</h3>
+      ${LEADS.slice(0, 3).map(renderLeadRow).join('') || '<p style="color:#6b6558">No leads yet. Encourage patients to contact you through your listing.</p>'}
+      ${LEADS.length > 3 ? `<p><button class="btn" onclick="tab('leads')">View all ${LEADS.length} leads</button></p>` : ''}
+    </div>`;
+}
+
+function renderLeadRow(l) {
+  return `
+    <div class="lead-row">
+      <div class="lead-name">${esc(l.name)} <span style="color:#6b6558;font-weight:400;font-size:13px">&lt;${esc(l.email)}&gt;</span></div>
+      <div class="lead-meta">${fmtDate(l.created_at)} &middot; ${esc(l.inquiry_type || 'inquiry')} ${l.phone ? `&middot; ${esc(l.phone)}` : ''} ${l.condition ? `&middot; ${esc(l.condition)}` : ''}</div>
+      <div class="lead-message">${esc(l.message).replace(/\n/g, '<br>')}</div>
+      <div style="margin-top:8px"><a class="btn" href="mailto:${esc(l.email)}?subject=Re%3A%20Your%20inquiry%20from%20${encodeURIComponent(LISTING.name)}">Reply by Email</a></div>
+    </div>`;
+}
+
+function renderLeads() {
+  if (!LEADS.length) return '<div class="card"><h3>Leads</h3><p>No leads yet.</p></div>';
+  return `<div class="card"><h3>All Leads (${LEADS.length})</h3>${LEADS.map(renderLeadRow).join('')}</div>`;
+}
+
+function renderEdit() {
+  const l = LISTING;
+  return `
+    <div class="card">
+      <h3>Edit Your Listing</h3>
+      <p style="font-size:13px;color:#6b6558">Changes are reviewed by our team before going live.</p>
+      <div class="field-row"><label>Phone</label><input id="ed-phone" value="${esc(l.phone || '')}"></div>
+      <div class="field-row"><label>Website</label><input id="ed-website" value="${esc(l.website || '')}"></div>
+      <div class="field-row"><label>Address</label><input id="ed-address1" value="${esc(l.address1 || '')}"></div>
+      <div class="field-row" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px">
+        <div><label>City</label><input id="ed-city" value="${esc(l.city || '')}"></div>
+        <div><label>State</label><input id="ed-state" value="${esc(l.state || '')}"></div>
+        <div><label>ZIP</label><input id="ed-zip" value="${esc(l.zip || '')}"></div>
+      </div>
+      <div class="field-row"><label>Bio / About</label><textarea id="ed-bio">${esc(l.bio || '')}</textarea></div>
+      <div class="field-row"><label><input type="checkbox" id="ed-travel" ${l.willTravel ? 'checked' : ''}> Available for patient travel visits</label></div>
+      <button class="btn btn-primary" onclick="saveEdits()">Submit Changes for Review</button>
+      <span id="save-msg" style="margin-left:12px"></span>
+    </div>`;
+}
+
+async function saveEdits() {
+  const fields = {
+    phone: document.getElementById('ed-phone').value,
+    website: document.getElementById('ed-website').value,
+    address1: document.getElementById('ed-address1').value,
+    city: document.getElementById('ed-city').value,
+    state: document.getElementById('ed-state').value,
+    zip: document.getElementById('ed-zip').value,
+    bio: document.getElementById('ed-bio').value,
+    will_travel: document.getElementById('ed-travel').checked
+  };
+  const msg = document.getElementById('save-msg');
+  msg.innerHTML = '<span style="color:#6b6558">Submitting...</span>';
+  const r = await fetch(API + '/facility-update', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug: LISTING.slug, accessToken: LISTING.accessToken, fields })
+  });
+  const data = await r.json();
+  if (r.ok) msg.innerHTML = '<span class="ok">Submitted for review!</span>';
+  else msg.innerHTML = `<span class="err">${esc(data.error || 'Failed')}</span>`;
+}
+
+function renderBilling() {
+  const l = LISTING;
+  return `
+    <div class="card">
+      <h3>Current Plan: ${l.plan.toUpperCase()}</h3>
+      ${l.plan === 'free' ? `
+        <p>You're on the free plan. Upgrade to unlock:</p>
+        <ul><li>Priority placement in search results</li><li>Featured badge on your profile</li><li>Advanced lead analytics</li><li>Photo gallery (up to 20 photos)</li></ul>
+        <div style="margin-top:20px">
+          <button class="btn btn-primary">Upgrade to Premium - $99/mo</button>
+          <button class="btn" style="margin-left:8px">Upgrade to Elite - $249/mo</button>
+        </div>
+      ` : `
+        <p>Plan active since ${fmtDate(l.planStartedAt)}</p>
+        <p>Billing: ${l.billingCycle || 'monthly'} &middot; Status: ${l.subscriptionStatus || 'active'}</p>
+        ${l.accountCreditCents > 0 ? `<p>Account credit: $${(l.accountCreditCents/100).toFixed(2)}</p>` : ''}
+      `}
+    </div>`;
+}
+
+function renderAccount() {
+  return `
+    <div class="card">
+      <h3>Account</h3>
+      <p><strong>Listing:</strong> ${esc(LISTING.slug)}<br>
+         <strong>Claimed:</strong> ${fmtDate(LISTING.claimedAt)}</p>
+      <hr style="border:none;border-top:1px solid #e5e1d6;margin:16px 0">
+      <h4>Change Password</h4>
+      <div class="field-row"><label>Current password</label><input type="password" id="ac-cur"></div>
+      <div class="field-row"><label>New password</label><input type="password" id="ac-new"></div>
+      <button class="btn btn-primary" onclick="changePass()">Update Password</button>
+      <span id="pw-msg" style="margin-left:12px"></span>
+      <hr style="border:none;border-top:1px solid #e5e1d6;margin:16px 0">
+      <button class="btn" onclick="location.href='/'">Sign Out</button>
+    </div>`;
+}
+
+async function changePass() {
+  const cur = document.getElementById('ac-cur').value;
+  const nw = document.getElementById('ac-new').value;
+  const msg = document.getElementById('pw-msg');
+  if (!cur || nw.length < 8) { msg.innerHTML = '<span class="err">8+ chars required</span>'; return; }
+  msg.innerHTML = 'Working...';
+  // TODO: implement owner password change endpoint
+  msg.innerHTML = '<span class="ok">Password change API coming soon</span>';
+}
+
+loadDashboard();
+</script>
+</body></html>

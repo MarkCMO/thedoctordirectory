@@ -1,0 +1,98 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Support | The Doctor Directory</title>
+<meta name="description" content="Contact The Doctor Directory support team. Submit a ticket for billing, account, or technical issues.">
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+body { background: #f7f5f0; }
+.sw { max-width: 600px; margin: 40px auto; padding: 0 24px; }
+.sc { background: #fff; border: 1px solid #e5e1d6; border-radius: 10px; padding: 32px; }
+.sc h1 { font-family: 'Playfair Display', serif; font-size: 28px; margin: 0 0 8px; color: #0b1a2f; }
+.sc p.sub { color: #6b6558; margin: 0 0 24px; }
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: #6b6558; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+.field input, .field select, .field textarea { width: 100%; padding: 10px 12px; border: 1px solid #c8c0ae; border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
+.field textarea { min-height: 120px; resize: vertical; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn { width: 100%; padding: 14px; background: #C8A45E; border: none; border-radius: 6px; color: #0b1a2f; font-size: 15px; font-weight: 600; cursor: pointer; }
+.err { color: #c4432a; font-size: 13px; margin-top: 8px; }
+.ok-msg { background: #d1f0d8; color: #1b7a2e; padding: 20px; border-radius: 8px; text-align: center; }
+.ok-msg h2 { margin: 0 0 8px; }
+</style></head>
+<body>
+<div class="sw">
+  <div class="sc" id="form-wrap">
+    <h1>Contact Support</h1>
+    <p class="sub">Our team typically responds within 24 hours.</p>
+    <div id="msg"></div>
+    <div class="row2">
+      <div class="field"><label>Your Name</label><input id="name"></div>
+      <div class="field"><label>Your Email *</label><input id="email" type="email" required></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Category</label>
+        <select id="category">
+          <option value="billing">Billing / Subscription</option>
+          <option value="account">Account Access</option>
+          <option value="technical">Technical Issue</option>
+          <option value="leads">Leads / Inquiries</option>
+          <option value="feature_request">Feature Request</option>
+          <option value="other" selected>Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Related Listing (optional)</label><input id="slug" placeholder="dr-firstname-lastname-id"></div>
+    </div>
+    <div class="field"><label>Subject *</label><input id="subject" required></div>
+    <div class="field"><label>Description *</label><textarea id="description" placeholder="Please describe your issue in detail..." required></textarea></div>
+    <button class="btn" onclick="submitTicket()">Submit Ticket</button>
+  </div>
+</div>
+
+<script>
+async function submitTicket() {
+  const btn = document.querySelector('.btn');
+  const msg = document.getElementById('msg');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  msg.innerHTML = '';
+
+  const body = {
+    name: document.getElementById('name').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    category: document.getElementById('category').value,
+    slug: document.getElementById('slug').value.trim() || null,
+    subject: document.getElementById('subject').value.trim(),
+    description: document.getElementById('description').value.trim()
+  };
+
+  if (!body.email || !body.subject || !body.description) {
+    msg.innerHTML = '<div class="err">Email, subject, and description required</div>';
+    btn.disabled = false; btn.textContent = 'Submit Ticket';
+    return;
+  }
+
+  try {
+    const r = await fetch('/api/support-ticket', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      msg.innerHTML = `<div class="err">${data.error || 'Failed'}</div>`;
+      btn.disabled = false; btn.textContent = 'Submit Ticket';
+      return;
+    }
+    document.getElementById('form-wrap').innerHTML = `
+      <div class="ok-msg">
+        <h2>Ticket Submitted</h2>
+        <p>Your ticket number is <strong>${data.ticketNumber}</strong>.</p>
+        <p>Check your email for confirmation. We'll respond within 24 hours.</p>
+        <p><a href="/" style="color:#0b1a2f">Back to home</a></p>
+      </div>`;
+  } catch (e) {
+    msg.innerHTML = `<div class="err">${e.message}</div>`;
+    btn.disabled = false; btn.textContent = 'Submit Ticket';
+  }
+}
+</script>
+</body></html>

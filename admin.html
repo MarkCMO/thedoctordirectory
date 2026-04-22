@@ -1,0 +1,620 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Admin | The Doctor Directory</title>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+:root { --admin-sidebar-w: 240px; }
+body { background: #f7f5f0; }
+.admin-wrap { display: grid; grid-template-columns: var(--admin-sidebar-w) 1fr; min-height: 100vh; }
+.admin-sidebar { background: #0b1a2f; color: #fff; padding: 24px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.admin-sidebar h1 { font-family: 'Playfair Display', serif; font-size: 20px; padding: 0 20px 16px; margin: 0; border-bottom: 1px solid rgba(255,255,255,.1); }
+.admin-sidebar .user { padding: 16px 20px; font-size: 12px; color: rgba(255,255,255,.5); border-bottom: 1px solid rgba(255,255,255,.1); }
+.admin-sidebar .nav-group { padding: 8px 0; }
+.admin-sidebar .nav-label { padding: 12px 20px 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.4); }
+.admin-sidebar a { display: flex; justify-content: space-between; align-items: center; padding: 8px 20px; color: rgba(255,255,255,.75); text-decoration: none; font-size: 14px; border-left: 3px solid transparent; cursor: pointer; }
+.admin-sidebar a:hover { background: rgba(255,255,255,.05); color: #fff; }
+.admin-sidebar a.active { background: rgba(200,164,94,.1); color: #C8A45E; border-left-color: #C8A45E; }
+.badge { background: #C8A45E; color: #0b1a2f; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.admin-main { padding: 24px 32px; min-width: 0; }
+.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.admin-header h2 { font-family: 'Playfair Display', serif; font-size: 28px; margin: 0; color: #0b1a2f; }
+.card { background: #fff; border: 1px solid #e5e1d6; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: #fff; border: 1px solid #e5e1d6; border-radius: 8px; padding: 16px; }
+.stat-num { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #0b1a2f; }
+.stat-label { font-size: 12px; color: #6b6558; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+table.admin-table { width: 100%; border-collapse: collapse; background: #fff; }
+table.admin-table th, table.admin-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e5e1d6; font-size: 13px; vertical-align: top; }
+table.admin-table th { background: #faf8f3; font-weight: 600; color: #0b1a2f; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+table.admin-table td a { color: #8a6a34; text-decoration: none; }
+.btn { display: inline-block; padding: 8px 14px; border-radius: 6px; border: 1px solid #c8c0ae; background: #fff; color: #0b1a2f; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn-primary { background: #C8A45E; border-color: #C8A45E; color: #0b1a2f; }
+.btn-danger { background: #c4432a; border-color: #c4432a; color: #fff; }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+.btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-bar input, .filter-bar select { padding: 8px 10px; border: 1px solid #c8c0ae; border-radius: 6px; font-size: 13px; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.pill-free { background: #eee; color: #555; }
+.pill-premium { background: #e7efff; color: #2a5db8; }
+.pill-elite { background: #fff2d6; color: #8a6a34; }
+.pill-sponsor { background: #ffd9d0; color: #c4432a; }
+.pill-new { background: #d1f0d8; color: #1b7a2e; }
+.pill-urgent { background: #ffd9d0; color: #c4432a; }
+.login-box { max-width: 400px; margin: 100px auto; background: #fff; padding: 32px; border-radius: 8px; border: 1px solid #e5e1d6; }
+.login-box h2 { margin: 0 0 20px; font-family: 'Playfair Display', serif; }
+.login-box input { width: 100%; padding: 10px 12px; margin: 8px 0; border: 1px solid #c8c0ae; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+.err { color: #c4432a; font-size: 13px; margin-top: 8px; }
+.ok { color: #1b7a2e; font-size: 13px; margin-top: 8px; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 100; }
+.modal-backdrop.show { display: flex; }
+.modal-box { background: #fff; border-radius: 8px; padding: 24px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; }
+.modal-box h3 { margin: 0 0 16px; font-family: 'Playfair Display', serif; }
+.modal-box textarea, .modal-box input, .modal-box select { width: 100%; padding: 8px 10px; margin: 6px 0; border: 1px solid #c8c0ae; border-radius: 6px; font-size: 13px; box-sizing: border-box; }
+.modal-box textarea { min-height: 100px; font-family: inherit; }
+hr.soft { border: none; border-top: 1px solid #e5e1d6; margin: 16px 0; }
+.diff-before { color: #c4432a; text-decoration: line-through; }
+.diff-after { color: #1b7a2e; }
+</style>
+</head><body>
+<div id="app"></div>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal-box" id="modal-content"></div>
+</div>
+
+<script>
+const API = '/api';
+let AUTH = null;
+let CURRENT_TAB = 'dashboard';
+
+// ----- API helpers
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    ...opts,
+    body: opts.body ? (typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body)) : undefined
+  });
+  if (res.status === 401 || res.status === 403) {
+    AUTH = null;
+    renderLogin();
+    throw new Error(res.status === 401 ? 'unauthenticated' : 'forbidden');
+  }
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return text; }
+}
+
+function el(html) {
+  const d = document.createElement('div');
+  d.innerHTML = html.trim();
+  return d.firstChild;
+}
+
+function showModal(html) {
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal').classList.add('show');
+}
+function hideModal() { document.getElementById('modal').classList.remove('show'); }
+document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') hideModal(); });
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmt$(c) { return '$' + (c/100).toFixed(2); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '-'; }
+
+// ----- Auth
+async function checkAuth() {
+  try {
+    const res = await api('/admin-bootstrap');
+    if (res.ok) { AUTH = res; return true; }
+  } catch {}
+  return false;
+}
+
+function renderLogin() {
+  document.getElementById('app').innerHTML = `
+    <div class="login-box">
+      <h2>Admin Login</h2>
+      <div id="login-err"></div>
+      <input type="email" id="li-email" placeholder="Email" autocomplete="email">
+      <input type="password" id="li-pass" placeholder="Password" autocomplete="current-password">
+      <button class="btn btn-primary" style="width:100%;padding:12px" onclick="doLogin()">Sign In</button>
+      <p style="text-align:center;margin-top:14px"><a href="#" onclick="showForgot()" style="font-size:13px;color:#8a6a34">Forgot password?</a></p>
+    </div>`;
+}
+
+async function doLogin() {
+  const email = document.getElementById('li-email').value.trim();
+  const password = document.getElementById('li-pass').value;
+  const errEl = document.getElementById('login-err');
+  errEl.innerHTML = '';
+  try {
+    const r = await fetch(API + '/auth-login', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await r.json();
+    if (!r.ok) { errEl.innerHTML = `<div class="err">${esc(data.error || 'Login failed')}</div>`; return; }
+    await checkAuth();
+    renderApp();
+  } catch (e) { errEl.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+function showForgot() {
+  showModal(`
+    <h3>Reset Password</h3>
+    <input type="email" id="fp-email" placeholder="Your email">
+    <button class="btn btn-primary" onclick="doForgot()">Send Reset Link</button>
+    <button class="btn" onclick="hideModal()">Cancel</button>
+    <div id="fp-msg"></div>
+  `);
+}
+
+async function doForgot() {
+  const email = document.getElementById('fp-email').value.trim();
+  if (!email) return;
+  const r = await fetch(API + '/auth-forgot-password', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  document.getElementById('fp-msg').innerHTML = '<div class="ok">If an account exists, a reset email was sent.</div>';
+  setTimeout(hideModal, 2000);
+}
+
+async function doLogout() {
+  await fetch(API + '/auth-logout', { method: 'POST', credentials: 'include' });
+  AUTH = null;
+  renderLogin();
+}
+
+// ----- Permission check
+function can(perm) {
+  if (!AUTH?.user?.permissions) return false;
+  return AUTH.user.permissions.includes('*') || AUTH.user.permissions.includes(perm);
+}
+
+// ----- App layout
+function renderApp() {
+  const b = AUTH.badges || {};
+  const nav = [
+    { group: 'Overview', items: [
+      { id: 'dashboard', label: 'Dashboard', perm: 'listings.view' }
+    ]},
+    { group: 'Directory', items: [
+      { id: 'listings', label: 'Doctors', perm: 'listings.view' },
+      { id: 'submissions', label: 'Submissions', perm: 'submissions.moderate', badge: b.pendingSubmissions },
+      { id: 'claims', label: 'Claim Queue', perm: 'claims.moderate', badge: b.pendingClaims },
+      { id: 'pending-edits', label: 'Pending Edits', perm: 'listings.edit', badge: b.pendingEdits }
+    ]},
+    { group: 'Sales', items: [
+      { id: 'leads', label: 'Leads', perm: 'listings.view', badge: b.newLeads },
+      { id: 'outreach', label: 'CRM Pipeline', perm: 'outreach.view' }
+    ]},
+    { group: 'Support', items: [
+      { id: 'tickets', label: 'Tickets', perm: 'tickets.view', badge: b.openTickets }
+    ]},
+    { group: 'Admin', items: [
+      { id: 'admins', label: 'Admin Users', perm: 'admins.manage' },
+      { id: 'audit', label: 'Audit Log', perm: 'admins.manage' }
+    ]}
+  ];
+
+  let navHtml = '';
+  for (const g of nav) {
+    const visible = g.items.filter(i => can(i.perm));
+    if (!visible.length) continue;
+    navHtml += `<div class="nav-label">${g.group}</div>`;
+    for (const i of visible) {
+      const badge = i.badge ? `<span class="badge">${i.badge}</span>` : '';
+      navHtml += `<a data-tab="${i.id}" class="${CURRENT_TAB === i.id ? 'active' : ''}">${i.label} ${badge}</a>`;
+    }
+  }
+
+  document.getElementById('app').innerHTML = `
+    <div class="admin-wrap">
+      <aside class="admin-sidebar">
+        <h1>EliteMD Admin</h1>
+        <div class="user">${esc(AUTH.user.email)}<br><span style="opacity:.5">${esc(AUTH.user.role)}</span></div>
+        ${navHtml}
+        <div class="nav-label" style="margin-top:20px">Account</div>
+        <a onclick="doLogout()">Sign out</a>
+      </aside>
+      <main class="admin-main">
+        <div class="admin-header">
+          <h2 id="tab-title">Dashboard</h2>
+          <div id="tab-actions"></div>
+        </div>
+        <div id="tab-content">Loading...</div>
+      </main>
+    </div>`;
+
+  document.querySelectorAll('.admin-sidebar a[data-tab]').forEach(a => {
+    a.addEventListener('click', () => loadTab(a.dataset.tab));
+  });
+
+  loadTab(CURRENT_TAB);
+}
+
+function loadTab(id) {
+  CURRENT_TAB = id;
+  document.querySelectorAll('.admin-sidebar a[data-tab]').forEach(a => {
+    a.classList.toggle('active', a.dataset.tab === id);
+  });
+  const titles = { dashboard: 'Dashboard', listings: 'Doctors', submissions: 'Submissions', claims: 'Claim Queue',
+    'pending-edits': 'Pending Edits', leads: 'Leads', outreach: 'CRM Pipeline', tickets: 'Support Tickets',
+    admins: 'Admin Users', audit: 'Audit Log' };
+  document.getElementById('tab-title').textContent = titles[id] || id;
+  document.getElementById('tab-actions').innerHTML = '';
+  document.getElementById('tab-content').innerHTML = '<div class="card">Loading...</div>';
+  if (typeof window['load_' + id.replace('-', '_')] === 'function') window['load_' + id.replace('-', '_')]();
+}
+
+// ----- Dashboard tab
+async function load_dashboard() {
+  const r = await api('/admin-stats');
+  const s = r.stats || {};
+  document.getElementById('tab-content').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">${s.totalListings.toLocaleString()}</div><div class="stat-label">Total Doctors</div></div>
+      <div class="stat-card"><div class="stat-num">${s.claimedListings.toLocaleString()}</div><div class="stat-label">Claimed (${s.claimRate}%)</div></div>
+      <div class="stat-card"><div class="stat-num">${s.premiumListings}</div><div class="stat-label">Paid Listings</div></div>
+      <div class="stat-card"><div class="stat-num">$${s.mrrDollars}</div><div class="stat-label">MRR</div></div>
+      <div class="stat-card"><div class="stat-num">$${s.arrDollars}</div><div class="stat-label">ARR (projected)</div></div>
+      <div class="stat-card"><div class="stat-num">${s.newLeadsToday}</div><div class="stat-label">New Leads (24h)</div></div>
+      <div class="stat-card"><div class="stat-num">${s.openTickets}</div><div class="stat-label">Open Tickets</div></div>
+      <div class="stat-card"><div class="stat-num">${s.pendingEdits + s.pendingClaims + s.pendingSubmissions}</div><div class="stat-label">Moderation Queue</div></div>
+    </div>
+    <div class="card">
+      <h3>Quick Actions</h3>
+      <p>
+        ${s.newLeadsToday ? `<button class="btn btn-primary" onclick="loadTab('leads')">Review ${s.newLeadsToday} new leads</button> ` : ''}
+        ${s.pendingClaims ? `<button class="btn" onclick="loadTab('claims')">${s.pendingClaims} pending claims</button> ` : ''}
+        ${s.pendingEdits ? `<button class="btn" onclick="loadTab('pending-edits')">${s.pendingEdits} pending edits</button> ` : ''}
+        ${s.openTickets ? `<button class="btn" onclick="loadTab('tickets')">${s.openTickets} open tickets</button> ` : ''}
+      </p>
+    </div>`;
+}
+
+// ----- Listings (doctors)
+let LIST_STATE = { page: 1, limit: 50, q: '', state: '', plan: '', claimed: '', specialty: '' };
+async function load_listings() {
+  document.getElementById('tab-content').innerHTML = `
+    <div class="filter-bar">
+      <input id="f-q" placeholder="Search name, city, email..." value="${esc(LIST_STATE.q)}">
+      <select id="f-state"><option value="">All states</option>${['Florida','California','Texas','New York','Illinois','Pennsylvania','Ohio','Georgia'].map(s=>`<option ${LIST_STATE.state===s?'selected':''}>${s}</option>`).join('')}</select>
+      <select id="f-plan"><option value="">All plans</option>${['free','premium','elite','sponsor'].map(p=>`<option ${LIST_STATE.plan===p?'selected':''}>${p}</option>`).join('')}</select>
+      <select id="f-claimed"><option value="">All</option><option value="yes" ${LIST_STATE.claimed==='yes'?'selected':''}>Claimed</option><option value="no" ${LIST_STATE.claimed==='no'?'selected':''}>Unclaimed</option></select>
+      <button class="btn btn-primary" onclick="doListSearch()">Search</button>
+    </div>
+    <div id="listings-body"></div>`;
+
+  document.getElementById('f-q').addEventListener('keydown', e => { if (e.key === 'Enter') doListSearch(); });
+  await refreshListings();
+}
+function doListSearch() {
+  LIST_STATE.q = document.getElementById('f-q').value;
+  LIST_STATE.state = document.getElementById('f-state').value;
+  LIST_STATE.plan = document.getElementById('f-plan').value;
+  LIST_STATE.claimed = document.getElementById('f-claimed').value;
+  LIST_STATE.page = 1;
+  refreshListings();
+}
+async function refreshListings() {
+  const qs = new URLSearchParams(Object.entries(LIST_STATE).filter(([,v]) => v !== '')).toString();
+  const r = await api('/admin-listings?' + qs);
+  const rows = (r.listings || []).map(l => `
+    <tr>
+      <td><strong>${esc(l.name)}</strong><br><span style="color:#8a6a34;font-size:11px">${esc(l.specialty || '')}</span></td>
+      <td>${esc(l.city || '')}, ${esc(l.state || '')}</td>
+      <td>${l.email ? esc(l.email) : '<em>none</em>'}<br>${l.phone ? esc(l.phone) : ''}</td>
+      <td><span class="pill pill-${l.plan}">${l.plan}</span></td>
+      <td>${l.claimed_at ? '✅' : '○'}</td>
+      <td>${l.rating || ''} ${l.reviews ? `(${l.reviews})` : ''}</td>
+      <td><div class="btn-row">
+        <a href="/doctors/${l.slug}" target="_blank" class="btn btn-sm">View</a>
+        <button class="btn btn-sm" onclick="editListing('${l.slug}')">Edit</button>
+      </div></td>
+    </tr>`).join('');
+  document.getElementById('listings-body').innerHTML = `
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th>Doctor</th><th>Location</th><th>Contact</th><th>Plan</th><th>Claimed</th><th>Rating</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="7">No results</td></tr>'}</tbody>
+      </table>
+      <div style="padding:12px;text-align:center;border-top:1px solid #e5e1d6">
+        Page ${r.page} of ${r.totalPages || 1} (${r.total} total)
+        ${r.page > 1 ? `<button class="btn btn-sm" onclick="LIST_STATE.page--;refreshListings()">Prev</button>` : ''}
+        ${r.page < r.totalPages ? `<button class="btn btn-sm" onclick="LIST_STATE.page++;refreshListings()">Next</button>` : ''}
+      </div>
+    </div>`;
+}
+function editListing(slug) {
+  showModal(`
+    <h3>Edit: ${esc(slug)}</h3>
+    <label>Plan</label>
+    <select id="el-plan"><option>free</option><option>premium</option><option>elite</option><option>sponsor</option></select>
+    <label>Phone</label><input id="el-phone">
+    <label>Email</label><input id="el-email">
+    <label>Website</label><input id="el-website">
+    <label>CRM Status</label>
+    <select id="el-crm"><option>cold</option><option>contacted</option><option>pitched</option><option>converted</option><option>declined</option></select>
+    <hr class="soft">
+    <button class="btn btn-primary" onclick="saveListing('${slug}')">Save Changes</button>
+    <button class="btn" onclick="hideModal()">Cancel</button>
+    <button class="btn btn-danger" style="float:right" onclick="deleteListing('${slug}')">Delete</button>
+  `);
+}
+async function saveListing(slug) {
+  const body = {
+    slug, action: 'update-field',
+    phone: document.getElementById('el-phone').value,
+    email: document.getElementById('el-email').value,
+    website: document.getElementById('el-website').value,
+    crm_status: document.getElementById('el-crm').value
+  };
+  await api('/admin-listing-action', { method: 'POST', body });
+  const plan = document.getElementById('el-plan').value;
+  await api('/admin-listing-action', { method: 'POST', body: { slug, action: 'set-plan', plan } });
+  hideModal();
+  refreshListings();
+}
+async function deleteListing(slug) {
+  if (!confirm('Permanently delete ' + slug + '?')) return;
+  await api('/admin-listing-action', { method: 'POST', body: { slug, action: 'delete' } });
+  hideModal();
+  refreshListings();
+}
+
+// ----- Leads
+async function load_leads() {
+  const r = await api('/admin-leads?limit=100');
+  const rows = (r.leads || []).map(l => `
+    <tr>
+      <td><strong>${esc(l.name)}</strong><br>${esc(l.email)}<br>${l.phone ? esc(l.phone) : ''}</td>
+      <td><a href="/doctors/${l.slug}" target="_blank">${esc(l.slug)}</a></td>
+      <td>${esc(l.inquiry_type || 'inquiry')}</td>
+      <td><span class="pill ${l.status === 'new' ? 'pill-new' : ''}">${l.status}</span></td>
+      <td>${fmtDate(l.created_at)}</td>
+      <td><button class="btn btn-sm" onclick="viewLead('${l.id}')">View</button></td>
+    </tr>`).join('');
+  document.getElementById('tab-content').innerHTML = `
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th>Patient</th><th>Doctor</th><th>Type</th><th>Status</th><th>Date</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6">No leads yet</td></tr>'}</tbody>
+      </table>
+    </div>`;
+  window._leads = r.leads || [];
+}
+function viewLead(id) {
+  const l = (window._leads || []).find(x => x.id === id);
+  if (!l) return;
+  showModal(`
+    <h3>Lead: ${esc(l.name)}</h3>
+    <p><strong>Email:</strong> ${esc(l.email)}<br>
+       ${l.phone ? `<strong>Phone:</strong> ${esc(l.phone)}<br>` : ''}
+       <strong>Doctor:</strong> <a href="/doctors/${l.slug}" target="_blank">${esc(l.slug)}</a><br>
+       <strong>Type:</strong> ${esc(l.inquiry_type)}<br>
+       ${l.condition ? `<strong>Condition:</strong> ${esc(l.condition)}<br>` : ''}
+       <strong>Submitted:</strong> ${fmtDate(l.created_at)}</p>
+    <p><strong>Message:</strong></p>
+    <div style="background:#faf8f3;padding:12px;border-radius:6px">${esc(l.message).replace(/\n/g,'<br>')}</div>
+    <hr class="soft">
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="leadAction('${id}','respond')">Mark Responded</button>
+      <button class="btn" onclick="leadAction('${id}','close')">Close</button>
+      <a class="btn" href="mailto:${esc(l.email)}?subject=Re%3A%20Your%20inquiry">Email</a>
+      <button class="btn" onclick="hideModal()">Close</button>
+    </div>
+  `);
+}
+async function leadAction(id, action) {
+  await api('/admin-leads', { method: 'POST', body: { id, action } });
+  hideModal();
+  load_leads();
+}
+
+// ----- Claims
+async function load_claims() {
+  const r = await api('/admin-claims?status=pending');
+  const rows = (r.claims || []).map(c => `
+    <tr>
+      <td><a href="/doctors/${c.slug}" target="_blank">${esc(c.slug)}</a></td>
+      <td>${esc(c.email)}<br>${c.phone ? esc(c.phone) : ''}</td>
+      <td>${esc(c.status)}</td>
+      <td>${fmtDate(c.created_at)}</td>
+      <td><div class="btn-row">
+        <button class="btn btn-primary btn-sm" onclick="claimAction('${c.id}','approve')">Approve</button>
+        <button class="btn btn-sm" onclick="claimAction('${c.id}','force-verify')">Force Verify</button>
+        <button class="btn btn-danger btn-sm" onclick="claimAction('${c.id}','reject')">Reject</button>
+      </div></td>
+    </tr>`).join('');
+  document.getElementById('tab-content').innerHTML = `
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th>Listing</th><th>Claimer</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5">No pending claims</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+async function claimAction(id, action) {
+  const note = action === 'reject' ? (prompt('Reason?') || '') : '';
+  await api('/admin-claims', { method: 'POST', body: { id, action, note } });
+  load_claims();
+}
+
+// ----- Pending edits
+async function load_pending_edits() {
+  const r = await api('/admin-pending-edits');
+  const rows = (r.edits || []).map(e => {
+    const changes = (e.changed_field_keys || []).map(k => `
+      <tr><td><code>${esc(k)}</code></td>
+      <td class="diff-before">${esc(JSON.stringify(e.previous_fields?.[k]))}</td>
+      <td class="diff-after">${esc(JSON.stringify(e.proposed_fields?.[k]))}</td></tr>`).join('');
+    return `
+      <div class="card">
+        <strong><a href="/doctors/${e.slug}" target="_blank">${esc(e.slug)}</a></strong>
+        <span style="float:right;font-size:12px;color:#6b6558">${fmtDate(e.created_at)} · ${esc(e.submitted_by_email || '')}</span>
+        <table class="admin-table" style="margin-top:12px"><thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead><tbody>${changes}</tbody></table>
+        <div class="btn-row" style="margin-top:12px">
+          <button class="btn btn-primary btn-sm" onclick="peAction('${e.id}','approve')">Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="peAction('${e.id}','reject')">Reject</button>
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('tab-content').innerHTML = rows || '<div class="card">No pending edits</div>';
+}
+async function peAction(id, action) {
+  const note = action === 'reject' ? (prompt('Reason?') || '') : '';
+  await api('/admin-pending-edits', { method: 'POST', body: { id, action, note } });
+  load_pending_edits();
+}
+
+// ----- Tickets
+async function load_tickets() {
+  const r = await api('/admin-support-tickets');
+  const rows = (r.tickets || []).map(t => `
+    <tr>
+      <td><strong>${esc(t.ticket_number)}</strong><br><span style="font-size:11px;color:#6b6558">${esc(t.category)}</span></td>
+      <td>${esc(t.submitter_name || t.submitter_email)}<br><span style="font-size:11px;color:#6b6558">${esc(t.submitter_email)}</span></td>
+      <td><strong>${esc(t.subject)}</strong></td>
+      <td><span class="pill ${t.priority === 'urgent' ? 'pill-urgent' : ''}">${t.priority}</span></td>
+      <td><span class="pill">${t.status}</span></td>
+      <td>${fmtDate(t.created_at)}</td>
+      <td><button class="btn btn-sm" onclick='viewTicket(${JSON.stringify(t).replace(/'/g,"&#39;")})'>Open</button></td>
+    </tr>`).join('');
+  document.getElementById('tab-content').innerHTML = `
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th>#</th><th>From</th><th>Subject</th><th>Priority</th><th>Status</th><th>Opened</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="7">No tickets</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+function viewTicket(t) {
+  showModal(`
+    <h3>${esc(t.ticket_number)}: ${esc(t.subject)}</h3>
+    <p><strong>From:</strong> ${esc(t.submitter_name || t.submitter_email)} &lt;${esc(t.submitter_email)}&gt;<br>
+       <strong>Category:</strong> ${esc(t.category)} · <strong>Priority:</strong> ${esc(t.priority)} · <strong>Status:</strong> ${esc(t.status)}</p>
+    <div style="background:#faf8f3;padding:12px;border-radius:6px;margin:12px 0">${esc(t.description).replace(/\n/g,'<br>')}</div>
+    ${t.admin_response ? `<p><strong>Last response:</strong></p><div style="background:#e7efff;padding:12px;border-radius:6px">${esc(t.admin_response).replace(/\n/g,'<br>')}</div>` : ''}
+    <hr class="soft">
+    <label>Reply to customer:</label>
+    <textarea id="t-response" placeholder="Type response..."></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="ticketRespond('${t.id}')">Send Reply</button>
+      <button class="btn" onclick="ticketAction('${t.id}','resolve')">Mark Resolved</button>
+      <button class="btn" onclick="ticketAction('${t.id}','close')">Close</button>
+    </div>
+  `);
+}
+async function ticketRespond(id) {
+  const message = document.getElementById('t-response').value.trim();
+  if (!message) return alert('Enter a response');
+  await api('/admin-support-tickets', { method: 'POST', body: { ticketId: id, action: 'respond', message } });
+  hideModal();
+  load_tickets();
+}
+async function ticketAction(id, action) {
+  await api('/admin-support-tickets', { method: 'POST', body: { ticketId: id, action } });
+  hideModal();
+  load_tickets();
+}
+
+// ----- Admin users
+async function load_admins() {
+  const r = await api('/admin-users');
+  const rows = (r.users || []).map(u => `
+    <tr>
+      <td><strong>${esc(u.name || u.email)}</strong><br><span style="font-size:11px;color:#6b6558">${esc(u.email)}</span></td>
+      <td><span class="pill">${esc(u.role)}</span></td>
+      <td>${u.active ? '✅ Active' : '⛔ Disabled'}</td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td><div class="btn-row">
+        <button class="btn btn-sm" onclick="adminReset('${u.email}')">Reset PW</button>
+        <button class="btn btn-sm" onclick="adminToggle('${u.email}', ${u.active})">${u.active ? 'Disable' : 'Enable'}</button>
+      </div></td>
+    </tr>`).join('');
+  document.getElementById('tab-actions').innerHTML = `<button class="btn btn-primary" onclick="adminCreate()">+ Invite Admin</button>`;
+  document.getElementById('tab-content').innerHTML = `
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Created</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+function adminCreate() {
+  showModal(`
+    <h3>Invite Admin</h3>
+    <label>Email</label><input id="au-email" type="email">
+    <label>Name</label><input id="au-name">
+    <label>Role</label>
+    <select id="au-role">
+      <option value="sales-associate">Sales Associate</option>
+      <option value="sales-manager">Sales Manager</option>
+      <option value="general-manager">General Manager</option>
+      <option value="super-admin">Super Admin</option>
+    </select>
+    <button class="btn btn-primary" onclick="doAdminCreate()">Send Invite</button>
+    <button class="btn" onclick="hideModal()">Cancel</button>
+  `);
+}
+async function doAdminCreate() {
+  const email = document.getElementById('au-email').value.trim().toLowerCase();
+  const name = document.getElementById('au-name').value;
+  const role = document.getElementById('au-role').value;
+  if (!email) return;
+  await api('/admin-users', { method: 'POST', body: { action: 'create', email, name, role } });
+  hideModal();
+  load_admins();
+}
+async function adminReset(email) {
+  if (!confirm('Send password reset to ' + email + '?')) return;
+  await api('/admin-users', { method: 'POST', body: { action: 'reset-password', email } });
+  alert('Reset email sent');
+}
+async function adminToggle(email, active) {
+  const action = active ? 'disable' : 'enable';
+  if (!confirm(action + ' ' + email + '?')) return;
+  await api('/admin-users', { method: 'POST', body: { action, email } });
+  load_admins();
+}
+
+// ----- Audit log
+async function load_audit() {
+  const r = await api('/admin-audit-log');
+  const rows = (r.log || []).map(a => `
+    <tr>
+      <td>${fmtDate(a.occurred_at)}<br><span style="font-size:11px;color:#6b6558">${new Date(a.occurred_at).toLocaleTimeString()}</span></td>
+      <td>${esc(a.actor_email)}</td>
+      <td><code>${esc(a.action)}</code></td>
+      <td>${esc(a.target_type || '')}: ${esc(a.target_id || '')}</td>
+      <td><details><summary>detail</summary><pre style="font-size:11px;max-width:400px;white-space:pre-wrap">${esc(JSON.stringify(a.detail || {}, null, 2))}</pre></details></td>
+    </tr>`).join('');
+  document.getElementById('tab-content').innerHTML = `
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ----- Placeholders
+async function load_outreach() {
+  document.getElementById('tab-content').innerHTML = '<div class="card"><h3>CRM Pipeline</h3><p>Coming soon - rep workflow + POC management.</p></div>';
+}
+async function load_submissions() {
+  document.getElementById('tab-content').innerHTML = '<div class="card"><h3>Submissions</h3><p>New listing submissions will appear here.</p></div>';
+}
+
+// ----- Boot
+(async () => {
+  if (await checkAuth()) renderApp();
+  else renderLogin();
+})();
+</script>
+</body></html>
