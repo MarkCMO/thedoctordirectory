@@ -190,7 +190,10 @@ function renderApp() {
     ]},
     { group: 'Sales', items: [
       { id: 'leads', label: 'Leads', perm: 'listings.view', badge: b.newLeads },
-      { id: 'outreach', label: 'CRM Pipeline', perm: 'outreach.view' }
+      { id: 'outreach', label: 'CRM Pipeline', perm: 'outreach.view' },
+      { id: 'reps', label: 'Sales Reps', perm: 'reps.view' },
+      { id: 'rep-applications', label: 'Rep Applications', perm: 'reps.view', badge: b.pendingRepApps },
+      { id: 'lead-requests', label: 'Lead Requests', perm: 'reps.view', badge: b.pendingLeadRequests }
     ]},
     { group: 'Support', items: [
       { id: 'tickets', label: 'Tickets', perm: 'tickets.view', badge: b.openTickets }
@@ -244,7 +247,8 @@ function loadTab(id) {
   });
   const titles = { dashboard: 'Dashboard', listings: 'Doctors', submissions: 'Submissions', claims: 'Claim Queue',
     'pending-edits': 'Pending Edits', leads: 'Leads', outreach: 'CRM Pipeline', tickets: 'Support Tickets',
-    admins: 'Admin Users', audit: 'Audit Log' };
+    admins: 'Admin Users', audit: 'Audit Log', reps: 'Sales Reps', 'rep-applications': 'Rep Applications',
+    'lead-requests': 'Lead Requests' };
   document.getElementById('tab-title').textContent = titles[id] || id;
   document.getElementById('tab-actions').innerHTML = '';
   document.getElementById('tab-content').innerHTML = '<div class="card">Loading...</div>';
@@ -601,6 +605,138 @@ async function load_audit() {
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+}
+
+// ----- Sales Reps
+async function load_reps() {
+  const r = await api('/admin-reps');
+  const rows = (r.reps || []).map(rep => {
+    const s = rep.stats || {};
+    return `
+      <tr>
+        <td><strong>${esc(rep.name || rep.email)}</strong><br><span style="font-size:11px;color:#6b6558">${esc(rep.email)}</span></td>
+        <td><span class="pill pill-elite">${rep.commission_tier}%</span><br><span style="font-size:10px;color:#6b6558">peak ${rep.highest_tier_reached || rep.commission_tier}%</span></td>
+        <td>${s.weeklyContacts || 0}</td>
+        <td>${s.conversions || 0}</td>
+        <td>${esc(rep.payment_method || '-')}<br><span style="font-size:11px;color:#6b6558">${esc(rep.payout_handle || '')}</span></td>
+        <td>${rep.active ? '✅' : '⛔'}</td>
+        <td><div class="btn-row">
+          <button class="btn btn-sm" onclick="repSetTier('${esc(rep.email)}', ${rep.commission_tier})">Set Tier</button>
+          <button class="btn btn-sm" onclick="repToggle('${esc(rep.email)}', ${rep.active})">${rep.active ? 'Disable' : 'Enable'}</button>
+        </div></td>
+      </tr>`;
+  }).join('');
+  document.getElementById('tab-content').innerHTML = `
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th>Rep</th><th>Tier</th><th>Contacts (7d)</th><th>Conversions</th><th>Payout</th><th>Active</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="7">No reps yet</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+function repSetTier(email, current) {
+  showModal(`
+    <h3>Set Tier for ${esc(email)}</h3>
+    <p style="color:#6b6558;font-size:13px">Current tier: <strong>${current}%</strong></p>
+    <label>New tier</label>
+    <select id="rt-tier">
+      <option value="30">30% (starting)</option>
+      <option value="35">35% (5 sponsors)</option>
+      <option value="40">40% (10 sponsors)</option>
+      <option value="45">45% (20 sponsors)</option>
+      <option value="50">50% (40 sponsors)</option>
+    </select>
+    <button class="btn btn-primary" onclick="doRepSetTier('${esc(email)}')">Save</button>
+    <button class="btn" onclick="hideModal()">Cancel</button>
+  `);
+  document.getElementById('rt-tier').value = String(current);
+}
+async function doRepSetTier(email) {
+  const tier = parseInt(document.getElementById('rt-tier').value, 10);
+  await api('/admin-reps', { method: 'POST', body: { action: 'setTier', email, tier } });
+  hideModal();
+  load_reps();
+}
+async function repToggle(email, active) {
+  if (!confirm((active ? 'Disable ' : 'Enable ') + email + '?')) return;
+  await api('/admin-reps', { method: 'POST', body: { action: 'toggleRep', email, active: !active } });
+  load_reps();
+}
+
+// ----- Rep Applications
+async function load_rep_applications() {
+  const r = await api('/admin-reps?applications=1');
+  const rows = (r.applications || []).map(a => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <strong>${esc(a.name)}</strong> · ${esc(a.email)}${a.phone ? ' · ' + esc(a.phone) : ''}<br>
+          <span style="font-size:12px;color:#6b6558">${esc((a.address && a.address.city) || '')}, ${esc((a.address && a.address.state) || '')} · Payment: ${esc(a.payment_method || '-')} · Categories: ${esc((a.preferred_categories || []).join(', ') || 'any')}</span>
+        </div>
+        <span style="font-size:11px;color:#6b6558">${fmtDate(a.created_at)}</span>
+      </div>
+      <p style="font-size:12px;color:#6b6558;margin:8px 0 0">Signed by <strong>${esc(a.signature_name)}</strong> on ${fmtDate(a.signed_at)} from ${esc(a.signature_ip || 'unknown IP')}</p>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-primary btn-sm" onclick="approveRepApp('${a.id}')">Approve</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectRepApp('${a.id}')">Reject</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('tab-content').innerHTML = rows || '<div class="card">No pending applications</div>';
+}
+function approveRepApp(id) {
+  showModal(`
+    <h3>Approve Application</h3>
+    <label>Starting Tier</label>
+    <select id="ra-tier">
+      <option value="30" selected>30% (default starting)</option>
+      <option value="35">35%</option>
+      <option value="40">40%</option>
+      <option value="45">45%</option>
+      <option value="50">50%</option>
+    </select>
+    <p style="font-size:12px;color:#6b6558">Approving creates the rep account and emails them a password setup link.</p>
+    <button class="btn btn-primary" onclick="doApproveRepApp('${id}')">Approve & Send Invite</button>
+    <button class="btn" onclick="hideModal()">Cancel</button>
+  `);
+}
+async function doApproveRepApp(id) {
+  const tier = parseInt(document.getElementById('ra-tier').value, 10);
+  await api('/admin-reps', { method: 'POST', body: { action: 'approveApplication', applicationId: id, tier } });
+  hideModal();
+  load_rep_applications();
+}
+async function rejectRepApp(id) {
+  const reason = prompt('Rejection reason (optional):') || '';
+  await api('/admin-reps', { method: 'POST', body: { action: 'rejectApplication', applicationId: id, reason } });
+  load_rep_applications();
+}
+
+// ----- Lead Requests
+async function load_lead_requests() {
+  const r = await api('/admin-reps?leadRequests=1');
+  const rows = (r.requests || []).map(q => `
+    <div class="card">
+      <strong>${esc(q.rep_email)}</strong> wants leads in
+      <strong>${esc(q.state || 'any state')}${q.city ? ', ' + esc(q.city) : ''}</strong>
+      ${q.category ? ' · <em>' + esc(q.category) + '</em>' : ''}
+      <span style="float:right;font-size:11px;color:#6b6558">${fmtDate(q.created_at)}</span>
+      ${q.notes ? `<p style="font-size:13px;color:#6b6558;margin:8px 0 0">${esc(q.notes)}</p>` : ''}
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn btn-primary btn-sm" onclick="approveLeadReq('${q.id}')">Approve</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectLeadReq('${q.id}')">Reject</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('tab-content').innerHTML = rows || '<div class="card">No pending lead requests</div>';
+}
+async function approveLeadReq(id) {
+  const note = prompt('Note (optional):') || '';
+  await api('/admin-reps', { method: 'POST', body: { action: 'approveLeadRequest', id, adminNote: note } });
+  load_lead_requests();
+}
+async function rejectLeadReq(id) {
+  const note = prompt('Reason (optional):') || '';
+  await api('/admin-reps', { method: 'POST', body: { action: 'rejectLeadRequest', id, adminNote: note } });
+  load_lead_requests();
 }
 
 // ----- Placeholders
