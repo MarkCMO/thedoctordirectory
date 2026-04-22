@@ -1,0 +1,163 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sell for The Doctor Directory | Sales Rep Application</title>
+<meta name="description" content="Earn 30-50% recurring commission selling premium listings to doctors. Apply to join The Doctor Directory sales team.">
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+body { background: #f7f5f0; font-family: 'Inter', system-ui, sans-serif; color: #0b1a2f; margin: 0; }
+.hero { background: linear-gradient(180deg, #0b1a2f 0%, #1e3a5f 100%); color: #fff; padding: 60px 24px 40px; text-align: center; }
+.hero h1 { font-family: 'Playfair Display', serif; font-size: 42px; margin: 0 0 12px; }
+.hero p { font-size: 17px; color: #d5d2c8; margin: 0 auto; max-width: 620px; line-height: 1.6; }
+.tiers { max-width: 900px; margin: -30px auto 40px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 0 24px; }
+@media (max-width:720px){ .tiers { grid-template-columns: repeat(2, 1fr); } }
+.tier { background: #fff; border: 1px solid #e5e1d6; padding: 14px; border-radius: 8px; text-align: center; }
+.tier .pct { font-family: 'Playfair Display', serif; font-size: 26px; color: #C8A45E; font-weight: 700; }
+.tier .lbl { font-size: 11px; color: #6b6558; text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
+
+.w { max-width: 720px; margin: 0 auto 60px; padding: 0 24px; }
+.card { background: #fff; border: 1px solid #e5e1d6; border-radius: 10px; padding: 32px; }
+h2 { font-family: 'Playfair Display', serif; font-size: 24px; margin: 0 0 8px; }
+.sub { color: #6b6558; margin: 0 0 24px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width:600px){ .row2 { grid-template-columns: 1fr; } }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: #6b6558; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.field input, .field select, .field textarea { width: 100%; padding: 10px 12px; border: 1px solid #c8c0ae; border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
+.field textarea { min-height: 90px; resize: vertical; }
+.checkboxes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; font-size: 13px; }
+.checkboxes label { display: flex; align-items: center; gap: 6px; font-weight: 400; text-transform: none; letter-spacing: normal; color: #0b1a2f; cursor: pointer; }
+.btn { width: 100%; padding: 14px; background: #C8A45E; border: none; border-radius: 6px; color: #0b1a2f; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 16px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.err { color: #c4432a; font-size: 13px; margin-top: 10px; }
+.ok-msg { background: #d1f0d8; color: #1b7a2e; padding: 22px; border-radius: 8px; text-align: center; }
+.legal { font-size: 12px; color: #6b6558; margin: 14px 0; line-height: 1.5; background: #faf8f3; padding: 14px; border-radius: 6px; }
+</style></head>
+<body>
+<section class="hero">
+  <h1>Sell for The Doctor Directory</h1>
+  <p>Earn 30 to 50% recurring monthly commission selling premium listings to doctors. Your payout grows as you vest city sponsorships.</p>
+</section>
+
+<div class="tiers">
+  <div class="tier"><div class="pct">30%</div><div class="lbl">Starting</div></div>
+  <div class="tier"><div class="pct">35%</div><div class="lbl">5 sponsors</div></div>
+  <div class="tier"><div class="pct">40%</div><div class="lbl">10 sponsors</div></div>
+  <div class="tier"><div class="pct">45%</div><div class="lbl">20 sponsors</div></div>
+  <div class="tier"><div class="pct">50%</div><div class="lbl">40 sponsors</div></div>
+</div>
+
+<div class="w">
+  <div class="card" id="form-wrap">
+    <h2>Apply Now</h2>
+    <p class="sub">3-business-day review. Once approved, you get your rep portal access.</p>
+
+    <div class="row2">
+      <div class="field"><label>Full Name *</label><input id="f-name" required></div>
+      <div class="field"><label>Email *</label><input id="f-email" type="email" required></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Phone</label><input id="f-phone" type="tel"></div>
+      <div class="field"><label>Address</label><input id="f-addr1"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>City</label><input id="f-city"></div>
+      <div class="row2">
+        <div class="field"><label>State</label><input id="f-state" maxlength="2"></div>
+        <div class="field"><label>ZIP</label><input id="f-zip" maxlength="10"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Preferred Categories (select any)</label>
+      <div class="checkboxes">
+        <label><input type="checkbox" value="Orthopedic Surgery"> Orthopedic Surgery</label>
+        <label><input type="checkbox" value="Cardiology"> Cardiology</label>
+        <label><input type="checkbox" value="Dermatology"> Dermatology</label>
+        <label><input type="checkbox" value="Plastic Surgery"> Plastic Surgery</label>
+        <label><input type="checkbox" value="Oncology"> Oncology</label>
+        <label><input type="checkbox" value="Neurology"> Neurology</label>
+        <label><input type="checkbox" value="Urology"> Urology</label>
+        <label><input type="checkbox" value="Gastroenterology"> Gastroenterology</label>
+        <label><input type="checkbox" value="Ophthalmology"> Ophthalmology</label>
+        <label><input type="checkbox" value="Psychiatry"> Psychiatry</label>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field"><label>Payout Method</label>
+        <select id="f-method">
+          <option value="">Select...</option>
+          <option value="ach">ACH / Direct Deposit</option>
+          <option value="paypal">PayPal</option>
+          <option value="check">Paper Check</option>
+        </select>
+      </div>
+      <div class="field"><label>Payout Handle (email or bank last 4)</label><input id="f-handle" placeholder="you@paypal.com or ****1234"></div>
+    </div>
+
+    <div class="field"><label>Why you?</label><textarea id="f-notes" placeholder="Tell us about your sales experience, any connections in healthcare..."></textarea></div>
+
+    <div class="legal">
+      By signing below and submitting, you certify you are at least 18 years old, authorized to work as an independent sales contractor, and agree to The Doctor Directory's Contractor Agreement. You will be issued a 1099 for annual commissions over $600.
+    </div>
+
+    <div class="field"><label>Electronic Signature (type your full legal name) *</label><input id="f-signature" required></div>
+
+    <button class="btn" onclick="submitApp()">Submit Application</button>
+    <div id="msg"></div>
+  </div>
+</div>
+
+<script>
+async function submitApp() {
+  const btn = document.querySelector('.btn');
+  const msg = document.getElementById('msg');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  msg.innerHTML = '';
+
+  const cats = Array.from(document.querySelectorAll('.checkboxes input:checked')).map(c => c.value);
+  const body = {
+    name: document.getElementById('f-name').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    addressLine1: document.getElementById('f-addr1').value.trim(),
+    city: document.getElementById('f-city').value.trim(),
+    state: document.getElementById('f-state').value.trim().toUpperCase(),
+    zip: document.getElementById('f-zip').value.trim(),
+    preferredCategories: cats,
+    paymentMethod: document.getElementById('f-method').value,
+    paymentHandle: document.getElementById('f-handle').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+    signatureName: document.getElementById('f-signature').value.trim()
+  };
+
+  if (!body.name || !body.email || !body.signatureName) {
+    msg.innerHTML = '<div class="err">Name, email, and signature are required.</div>';
+    btn.disabled = false; btn.textContent = 'Submit Application';
+    return;
+  }
+
+  try {
+    const r = await fetch('/api/apply-rep', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      msg.innerHTML = `<div class="err">${data.error || 'Failed'}</div>`;
+      btn.disabled = false; btn.textContent = 'Submit Application';
+      return;
+    }
+    document.getElementById('form-wrap').innerHTML = `
+      <div class="ok-msg">
+        <h2 style="margin-top:0">Application Submitted</h2>
+        <p>We'll review within 3 business days. Watch for an email from The Doctor Directory.</p>
+        <p>If approved, you'll get a link to set your password and access your rep portal.</p>
+      </div>`;
+  } catch (e) {
+    msg.innerHTML = `<div class="err">${e.message}</div>`;
+    btn.disabled = false; btn.textContent = 'Submit Application';
+  }
+}
+</script>
+</body></html>
