@@ -247,7 +247,11 @@ function renderBilling() {
         <p>Plan active since ${fmtDate(l.planStartedAt)}</p>
         <p>Billing: ${l.billingCycle || 'monthly'} &middot; Status: ${l.subscriptionStatus || 'active'}</p>
         ${l.accountCreditCents > 0 ? `<p>Account credit: $${(l.accountCreditCents/100).toFixed(2)}</p>` : ''}
-        <button class="btn" style="margin-top:14px;background:#fff;border:1px solid #c8c0ae" onclick="cancelSubscription()">Cancel Subscription</button>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn" style="background:#fff;border:1px solid #c8c0ae;text-decoration:none" href="/billing?slug=${encodeURIComponent(l.slug)}">Manage Billing &amp; Invoices</a>
+          <a class="btn" style="background:#fff;border:1px solid #c8c0ae;text-decoration:none" href="/upgrade?slug=${encodeURIComponent(l.slug)}&email=${encodeURIComponent(l.email || '')}">Change Plan</a>
+          <button class="btn" style="background:#fff;border:1px solid #c8c0ae" onclick="cancelSubscription()">Cancel Subscription</button>
+        </div>
       `}
     </div>`;
 }

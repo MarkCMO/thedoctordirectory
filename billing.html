@@ -1,0 +1,200 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Billing | The Doctor Directory</title>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+body { background: #f7f5f0; font-family: 'Inter', system-ui, sans-serif; color: #0b1a2f; }
+.w { max-width: 860px; margin: 40px auto; padding: 0 24px; }
+.card { background: #fff; border: 1px solid #e5e1d6; border-radius: 10px; padding: 28px; margin-bottom: 20px; }
+h1 { font-family: 'Playfair Display', serif; font-size: 28px; margin: 0 0 4px; }
+h2 { font-family: 'Playfair Display', serif; font-size: 20px; margin: 0 0 12px; }
+.sub { color: #6b6558; margin: 0 0 20px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width:720px){ .grid2 { grid-template-columns: 1fr; } }
+.kv { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0ede3; font-size: 14px; }
+.kv:last-child { border-bottom: none; }
+.kv strong { color: #0b1a2f; }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.pill-active { background: #d1f0d8; color: #1b7a2e; }
+.pill-canceled { background: #ffd9d0; color: #c4432a; }
+.pill-past_due { background: #fff2d6; color: #8a6a34; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #f0ede3; }
+th { color: #6b6558; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+.btn { display: inline-block; padding: 10px 18px; border: 1px solid #c8c0ae; border-radius: 6px; background: #fff; color: #0b1a2f; font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; }
+.btn-primary { background: #C8A45E; border-color: #C8A45E; }
+.btn-danger { background: #c4432a; border-color: #c4432a; color: #fff; }
+.err { color: #c4432a; font-size: 13px; margin-top: 10px; }
+#card-container { padding: 12px; border: 1px solid #c8c0ae; border-radius: 6px; min-height: 50px; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 100; }
+.modal.show { display: flex; }
+.modal-inner { background: #fff; padding: 24px; border-radius: 10px; max-width: 440px; width: 90%; }
+.modal-inner input { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #c8c0ae; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+</style></head>
+<body>
+<div class="w">
+  <div class="card">
+    <h1>Billing</h1>
+    <p class="sub" id="listing-name">Loading...</p>
+    <p><a href="#" id="back-link" style="color:#8a6a34">&larr; Back to My Listing</a></p>
+  </div>
+  <div id="content">Loading...</div>
+</div>
+
+<div class="modal" id="card-modal">
+  <div class="modal-inner">
+    <h2>Update Card on File</h2>
+    <input id="cu-name" placeholder="Name on card">
+    <div id="card-container"></div>
+    <p id="card-msg"></p>
+    <button class="btn btn-primary" id="card-save">Save Card</button>
+    <button class="btn" onclick="closeCardModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+const slug = new URLSearchParams(location.search).get('slug') || '';
+let CFG = null, PAYMENTS = null, CARD = null;
+
+document.getElementById('back-link').href = '/my-listing?slug=' + encodeURIComponent(slug);
+if (!slug) document.getElementById('content').innerHTML = '<div class="card"><p class="err">Missing ?slug in URL.</p></div>';
+
+function money(c) { return '$' + ((c || 0) / 100).toFixed(2); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '-'; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+(async () => {
+  if (!slug) return;
+  try {
+    const r = await fetch('/api/owner-billing?slug=' + encodeURIComponent(slug), { credentials: 'include' });
+    const data = await r.json();
+    if (!r.ok) { document.getElementById('content').innerHTML = '<div class="card"><p class="err">' + esc(data.error || 'Failed to load billing') + '</p></div>'; return; }
+    render(data);
+  } catch (e) {
+    document.getElementById('content').innerHTML = '<div class="card"><p class="err">' + esc(e.message) + '</p></div>';
+  }
+})();
+
+function render(d) {
+  const s = d.summary || {};
+  const status = s.subscriptionStatus || 'free';
+  const pillClass = status === 'active' ? 'pill-active' : status === 'canceled' ? 'pill-canceled' : status === 'past_due' ? 'pill-past_due' : '';
+  const card = d.card;
+  const invoices = d.invoices || [];
+
+  document.getElementById('listing-name').textContent = 'Managing: /doctors/' + slug;
+
+  document.getElementById('content').innerHTML = `
+    <div class="grid2">
+      <div class="card">
+        <h2>Subscription</h2>
+        <div class="kv"><span>Plan</span><strong>${esc((s.plan || 'free').toUpperCase())}</strong></div>
+        <div class="kv"><span>Status</span><span class="pill ${pillClass}">${esc(status)}</span></div>
+        <div class="kv"><span>Since</span><strong>${fmtDate(s.startedAt)}</strong></div>
+        <div style="margin-top:14px">
+          ${s.plan !== 'free' && status !== 'canceled' ? `
+            <a class="btn" href="/upgrade?slug=${encodeURIComponent(slug)}">Change Plan</a>
+            <button class="btn btn-danger" onclick="cancelSub()">Cancel</button>
+          ` : `
+            <a class="btn btn-primary" href="/upgrade?slug=${encodeURIComponent(slug)}">Upgrade Now</a>
+          `}
+        </div>
+      </div>
+      <div class="card">
+        <h2>Payment Method</h2>
+        ${card ? `
+          <div class="kv"><span>Brand</span><strong>${esc(card.brand)}</strong></div>
+          <div class="kv"><span>Last 4</span><strong>•••• ${esc(card.last4)}</strong></div>
+          <div class="kv"><span>Expires</span><strong>${esc(String(card.expMonth).padStart(2,'0'))}/${esc(String(card.expYear).slice(-2))}</strong></div>
+          <div style="margin-top:14px"><button class="btn" onclick="openCardModal()">Update Card</button></div>
+        ` : '<p style="color:#6b6558;font-size:13px">No card on file.</p>'}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Invoice History</h2>
+      ${invoices.length ? `
+        <table>
+          <thead><tr><th>Invoice</th><th>Status</th><th>Due</th><th>Amount</th><th>Paid</th><th></th></tr></thead>
+          <tbody>
+            ${invoices.map(i => `
+              <tr>
+                <td>${esc(i.number || i.id.slice(0,8))}</td>
+                <td>${esc(i.status)}</td>
+                <td>${fmtDate(i.dueDate)}</td>
+                <td>${money(i.amount)}</td>
+                <td>${fmtDate(i.paidAt)}</td>
+                <td>${i.publicUrl ? `<a href="${esc(i.publicUrl)}" target="_blank">View</a>` : ''}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      ` : '<p style="color:#6b6558;font-size:13px">No invoices yet.</p>'}
+    </div>`;
+}
+
+async function cancelSub() {
+  if (!confirm('Cancel this subscription? Your listing will revert to free when the current period ends.')) return;
+  const r = await fetch('/api/square-cancel', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug })
+  });
+  const data = await r.json();
+  if (!r.ok) { alert(data.error || 'Cancel failed'); return; }
+  alert('Canceled. Reloading...');
+  location.reload();
+}
+
+// ----- Update card flow
+async function openCardModal() {
+  document.getElementById('card-modal').classList.add('show');
+  if (!CFG) {
+    const r = await fetch('/api/square-config'); CFG = await r.json();
+    const sdk = document.createElement('script');
+    sdk.src = CFG.environment === 'production' ? 'https://web.squarecdn.com/v1/square.js' : 'https://sandbox.web.squarecdn.com/v1/square.js';
+    sdk.onload = initCard;
+    document.head.appendChild(sdk);
+  }
+}
+function closeCardModal() { document.getElementById('card-modal').classList.remove('show'); }
+
+async function initCard() {
+  try {
+    PAYMENTS = window.Square.payments(CFG.applicationId, CFG.locationId);
+    CARD = await PAYMENTS.card();
+    await CARD.attach('#card-container');
+  } catch (e) {
+    document.getElementById('card-msg').innerHTML = '<span class="err">Card form failed: ' + esc(e.message) + '</span>';
+  }
+}
+
+document.getElementById('card-save').addEventListener('click', async () => {
+  if (!CARD) return;
+  const btn = document.getElementById('card-save'); const msg = document.getElementById('card-msg');
+  btn.disabled = true; btn.textContent = 'Saving...'; msg.innerHTML = '';
+  try {
+    const tok = await CARD.tokenize();
+    if (tok.status !== 'OK') throw new Error((tok.errors && tok.errors[0]?.message) || 'Tokenize failed');
+    let verifyToken = null;
+    try {
+      const v = await PAYMENTS.verifyBuyer(tok.token, { amount: '1.00', currencyCode: 'USD', intent: 'STORE', billingContact: { givenName: document.getElementById('cu-name').value } });
+      verifyToken = v && v.token;
+    } catch {}
+    const r = await fetch('/api/square-update-card', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, cardNonce: tok.token, buyerVerificationToken: verifyToken, cardholder: document.getElementById('cu-name').value })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Update failed');
+    closeCardModal();
+    alert('Card updated.');
+    location.reload();
+  } catch (e) {
+    msg.innerHTML = '<span class="err">' + esc(e.message) + '</span>';
+    btn.disabled = false; btn.textContent = 'Save Card';
+  }
+});
+</script>
+</body></html>
