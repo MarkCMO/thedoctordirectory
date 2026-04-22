@@ -124,4 +124,24 @@ document.addEventListener('DOMContentLoaded', function() {
   var mb = document.querySelector('.mobile-menu-btn');
   var nl = document.querySelector('.nav-links');
   if (mb && nl) mb.addEventListener('click', function() { nl.classList.toggle('mobile-open'); });
+
+  // Inject "Claim Your Listing" CTA on doctor profile pages (for unclaimed listings)
+  (function injectClaimCta() {
+    var slug = getSlug();
+    if (!slug) return;
+    var actions = document.querySelector('.profile-actions');
+    if (!actions) return;
+    // Check claim status via public lookup
+    fetch('/api/facility-lookup?slug=' + encodeURIComponent(slug))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(data){
+        if (!data || data.claimed) return;
+        var banner = document.createElement('div');
+        banner.style.cssText = 'margin:16px 0;padding:12px 16px;background:#faf8f3;border-left:3px solid #C8A45E;border-radius:4px;font-size:14px;color:#4a453a;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
+        banner.innerHTML = '<span><strong style="color:#0b1a2f">Is this you?</strong> Claim this profile to manage leads, edit info, and respond to inquiries.</span>' +
+                           '<a href="/claim?slug=' + encodeURIComponent(slug) + '" style="background:#C8A45E;color:#0b1a2f;padding:8px 14px;border-radius:4px;text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap">Claim Listing</a>';
+        actions.parentNode.insertBefore(banner, actions.nextSibling);
+      })
+      .catch(function(){});
+  })();
 });
