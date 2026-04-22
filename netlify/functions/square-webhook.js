@@ -11,6 +11,7 @@
  */
 const crypto = require('crypto');
 const { sb } = require('./db');
+const { sendEvent } = require('./email-send');
 
 const SIG_KEY = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 const WEBHOOK_URL = process.env.SQUARE_WEBHOOK_URL || 'https://thedoctordirectory.com/api/square-webhook';
@@ -69,6 +70,45 @@ exports.handler = async (event) => {
       if (newStatus === 'canceled') update.plan = 'free';
       await sb().from('listings').update(update).eq('square_subscription_id', subId);
     }
+
+    // Email owner on payment events
+    try {
+      const { data: listing } = await sb().from('listings').select('slug,name,plan,claimed_by_email,tenant_id').eq('square_subscription_id', subId).maybeSingle();
+      if (listing?.claimed_by_email) {
+        const first = (listing.name || '').split(/\s+/)[0] || 'there';
+        const billingUrl = `https://thedoctordirectory.com/billing?slug=${encodeURIComponent(listing.slug)}`;
+
+        if (type === 'invoice.payment_made') {
+          const invoice = obj.invoice || {};
+          const amount = invoice.payment_requests?.[0]?.computed_amount_money?.amount || invoice.next_payment_amount_money?.amount;
+          const amountStr = amount ? '$' + (amount / 100).toFixed(2) : '';
+          await sendEvent({
+            to: listing.claimed_by_email, tenantId: listing.tenant_id, event: 'billing.payment_made',
+            subject: `Payment received | The Doctor Directory`,
+            html: `<p>Hi ${first},</p>
+                   <p>Your payment ${amountStr ? 'of <strong>' + amountStr + '</strong> ' : ''}has been processed successfully. Your ${listing.plan.toUpperCase()} listing is active.</p>
+                   ${invoice.public_url ? `<p><a href="${invoice.public_url}">View invoice</a></p>` : ''}
+                   <p><a href="${billingUrl}">Manage billing</a></p>`
+          });
+        } else if (type === 'invoice.failed') {
+          await sendEvent({
+            to: listing.claimed_by_email, tenantId: listing.tenant_id, event: 'billing.payment_failed',
+            subject: `Payment failed - action required | The Doctor Directory`,
+            html: `<p>Hi ${first},</p>
+                   <p>We weren't able to process your last payment. Your listing will remain active for a short grace period while we retry.</p>
+                   <p>Please update your card to avoid interruption: <a href="${billingUrl}">Update payment method</a></p>`
+          });
+        } else if (type === 'invoice.canceled' || type === 'subscription.updated' && newStatus === 'canceled') {
+          await sendEvent({
+            to: listing.claimed_by_email, tenantId: listing.tenant_id, event: 'billing.subscription_canceled',
+            subject: `Your subscription has been canceled | The Doctor Directory`,
+            html: `<p>Hi ${first},</p>
+                   <p>Your subscription has been canceled. Your listing has reverted to the free plan.</p>
+                   <p>You can resubscribe any time at <a href="https://thedoctordirectory.com/upgrade?slug=${encodeURIComponent(listing.slug)}">Upgrade</a>.</p>`
+          });
+        }
+      }
+    } catch (e) { console.error('owner billing email:', e.message); }
   }
 
   return { statusCode: 200, body: JSON.stringify({ ok: true }) };

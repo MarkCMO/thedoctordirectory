@@ -180,7 +180,8 @@ function renderApp() {
   const b = AUTH.badges || {};
   const nav = [
     { group: 'Overview', items: [
-      { id: 'dashboard', label: 'Dashboard', perm: 'listings.view' }
+      { id: 'dashboard', label: 'Dashboard', perm: 'listings.view' },
+      { id: 'analytics', label: 'Analytics', perm: 'listings.view' }
     ]},
     { group: 'Directory', items: [
       { id: 'listings', label: 'Doctors', perm: 'listings.view' },
@@ -247,7 +248,7 @@ function loadTab(id) {
   document.querySelectorAll('.admin-sidebar a[data-tab]').forEach(a => {
     a.classList.toggle('active', a.dataset.tab === id);
   });
-  const titles = { dashboard: 'Dashboard', listings: 'Doctors', submissions: 'Submissions', claims: 'Claim Queue',
+  const titles = { dashboard: 'Dashboard', analytics: 'Analytics', listings: 'Doctors', submissions: 'Submissions', claims: 'Claim Queue',
     'pending-edits': 'Pending Edits', leads: 'Leads', outreach: 'CRM Pipeline', tickets: 'Support Tickets',
     admins: 'Admin Users', audit: 'Audit Log', reps: 'Sales Reps', 'rep-applications': 'Rep Applications',
     'lead-requests': 'Lead Requests', payouts: 'Rep Payouts', managers: 'Managers' };
@@ -280,6 +281,90 @@ async function load_dashboard() {
         ${s.pendingEdits ? `<button class="btn" onclick="loadTab('pending-edits')">${s.pendingEdits} pending edits</button> ` : ''}
         ${s.openTickets ? `<button class="btn" onclick="loadTab('tickets')">${s.openTickets} open tickets</button> ` : ''}
       </p>
+    </div>`;
+}
+
+// ----- Analytics
+async function load_analytics() {
+  const r = await api('/admin-analytics');
+  const pm = r.planMix || {};
+  const trend = r.mrrTrend || { labels: [], values: [] };
+  const leads = r.leadsTrend || {};
+  const funnel = r.funnel || {};
+  const lb = r.leaderboard || [];
+
+  // Build SVG sparkline for MRR trend
+  const mrrMax = Math.max(1, ...trend.values);
+  const W = 720, H = 180, P = 24;
+  const pts = trend.values.map((v, i) => {
+    const x = P + (i * (W - P * 2) / Math.max(1, trend.values.length - 1));
+    const y = H - P - (v / mrrMax) * (H - P * 2);
+    return [x, y];
+  });
+  const mrrPath = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const mrrLabels = trend.labels.map((lbl, i) => `<text x="${pts[i][0]}" y="${H - 4}" font-size="9" fill="#8a6a34" text-anchor="middle">${lbl.slice(5)}</text>`).join('');
+
+  // Leads bar chart
+  const leadDays = Object.keys(leads);
+  const leadVals = Object.values(leads);
+  const leadMax = Math.max(1, ...leadVals);
+  const bars = leadDays.map((d, i) => {
+    const bw = (W - P * 2) / leadDays.length;
+    const x = P + i * bw;
+    const h = (leadVals[i] / leadMax) * (H - P * 2);
+    return `<rect x="${x + 1}" y="${H - P - h}" width="${bw - 2}" height="${h}" fill="#C8A45E"/>`;
+  }).join('');
+
+  // Funnel bars
+  const fnStages = ['sent','contacted','pitched','converted'];
+  const fnMax = Math.max(1, ...fnStages.map(s => funnel[s] || 0));
+  const fnHtml = fnStages.map(s => {
+    const v = funnel[s] || 0;
+    const pct = (v / fnMax) * 100;
+    return `<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><strong>${s}</strong><span>${v.toLocaleString()}</span></div><div style="background:#f0ede3;height:10px;border-radius:5px;overflow:hidden"><div style="background:#C8A45E;height:100%;width:${pct}%"></div></div></div>`;
+  }).join('');
+
+  document.getElementById('tab-content').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">${fmt$(r.currentMrr || 0)}</div><div class="stat-label">Current MRR</div></div>
+      <div class="stat-card"><div class="stat-num">${fmt$((r.currentMrr || 0) * 12)}</div><div class="stat-label">Projected ARR</div></div>
+      <div class="stat-card"><div class="stat-num">${(pm.premium + pm.elite + pm.sponsor).toLocaleString()}</div><div class="stat-label">Paid Subscriptions</div></div>
+      <div class="stat-card"><div class="stat-num">${(pm.free || 0).toLocaleString()}</div><div class="stat-label">Free Listings</div></div>
+    </div>
+
+    <div class="card">
+      <h3>MRR Trend (12 months)</h3>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:200px">
+        <path d="${mrrPath}" stroke="#0b1a2f" stroke-width="2" fill="none"/>
+        ${pts.map((p,i) => `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#C8A45E"><title>${trend.labels[i]}: ${fmt$(trend.values[i])}</title></circle>`).join('')}
+        ${mrrLabels}
+      </svg>
+    </div>
+
+    <div class="grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <h3>Plan Mix</h3>
+        <div class="kv" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0ede3"><span>Premium ($49)</span><strong>${(pm.premium || 0).toLocaleString()}</strong></div>
+        <div class="kv" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0ede3"><span>Elite ($99)</span><strong>${(pm.elite || 0).toLocaleString()}</strong></div>
+        <div class="kv" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0ede3"><span>Sponsor ($499)</span><strong>${(pm.sponsor || 0).toLocaleString()}</strong></div>
+        <div class="kv" style="display:flex;justify-content:space-between;padding:6px 0"><span>Free</span><strong>${(pm.free || 0).toLocaleString()}</strong></div>
+      </div>
+      <div class="card">
+        <h3>Conversion Funnel</h3>
+        ${fnHtml}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Leads (last 30 days)</h3>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:180px">${bars}</svg>
+    </div>
+
+    <div class="card">
+      <h3>Rep Leaderboard (90-day conversions)</h3>
+      ${lb.length ? `<table class="admin-table"><thead><tr><th>#</th><th>Rep</th><th>Conversions</th></tr></thead><tbody>
+        ${lb.map((x,i) => `<tr><td>${i+1}</td><td>${esc(x.email)}</td><td><strong>${x.conversions}</strong></td></tr>`).join('')}
+      </tbody></table>` : '<p style="color:#6b6558">No conversions yet in last 90 days.</p>'}
     </div>`;
 }
 
