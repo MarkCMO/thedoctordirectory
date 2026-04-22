@@ -1,0 +1,156 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Upgrade Your Listing | The Doctor Directory</title>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+body { background: #f7f5f0; font-family: 'Inter', system-ui, sans-serif; color: #0b1a2f; }
+.w { max-width: 720px; margin: 40px auto; padding: 0 24px; }
+.card { background: #fff; border: 1px solid #e5e1d6; border-radius: 10px; padding: 32px; margin-bottom: 20px; }
+h1 { font-family: 'Playfair Display', serif; font-size: 28px; margin: 0 0 8px; }
+.sub { color: #6b6558; margin: 0 0 24px; }
+.plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+@media (max-width:720px){ .plans { grid-template-columns: 1fr; } }
+.plan { border: 2px solid #e5e1d6; padding: 18px; border-radius: 8px; cursor: pointer; transition: all .15s; }
+.plan.selected { border-color: #C8A45E; background: #faf8f3; }
+.plan h3 { margin: 0 0 4px; font-family: 'Playfair Display', serif; font-size: 20px; }
+.plan .price { font-size: 24px; font-weight: 700; color: #0b1a2f; }
+.plan .price small { font-size: 12px; color: #6b6558; font-weight: 400; }
+.plan ul { margin: 12px 0 0; padding: 0 0 0 16px; font-size: 13px; color: #6b6558; }
+.plan ul li { margin-bottom: 4px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: #6b6558; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.field input { width: 100%; padding: 10px; border: 1px solid #c8c0ae; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+#card-container { padding: 12px; border: 1px solid #c8c0ae; border-radius: 6px; min-height: 50px; }
+.btn { width: 100%; padding: 14px; background: #C8A45E; border: none; border-radius: 6px; color: #0b1a2f; font-weight: 600; font-size: 15px; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.err { color: #c4432a; font-size: 13px; margin-top: 10px; }
+.ok { color: #1b7a2e; font-size: 13px; margin-top: 10px; }
+</style></head>
+<body>
+<div class="w">
+  <div class="card">
+    <h1>Upgrade Your Listing</h1>
+    <p class="sub">Choose a plan. Your card is charged monthly; cancel anytime from your dashboard.</p>
+    <div id="plans" class="plans"></div>
+    <form id="pay-form" style="display:none">
+      <div class="field"><label>Name on Card</label><input id="cardholder" required></div>
+      <div class="field"><label>Card</label><div id="card-container"></div></div>
+      <button type="submit" class="btn" id="pay-btn">Subscribe</button>
+      <div id="msg"></div>
+    </form>
+    <div id="result" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+const slug = new URLSearchParams(location.search).get('slug') || '';
+let SELECTED = null, CFG = null, CARD = null, PAYMENTS = null;
+
+function $ (id) { return document.getElementById(id); }
+function money(c) { return '$' + (c / 100).toFixed(2); }
+
+(async () => {
+  if (!slug) { document.querySelector('.card').innerHTML = '<p class="err">Missing slug in URL.</p>'; return; }
+  try {
+    const r = await fetch('/api/square-config'); CFG = await r.json();
+  } catch { $('msg').innerHTML = '<div class="err">Square not configured</div>'; return; }
+
+  if (!CFG.applicationId || !CFG.locationId) {
+    document.querySelector('.card').innerHTML = '<p class="err">Payments are not yet configured. Please check back shortly.</p>';
+    return;
+  }
+
+  // Render plan cards
+  const planFeatures = {
+    PREMIUM: ['Verified badge', 'Featured placement', 'Lead inbox'],
+    ELITE:   ['All Premium features', 'Priority support', 'Profile analytics', 'Custom profile fields'],
+    SPONSOR: ['All Elite features', 'Exclusive city-specialty sponsorship', 'Top placement guaranteed']
+  };
+  const html = CFG.plans.map(p => `
+    <div class="plan" data-key="${p.key}" ${p.variationId ? '' : 'style="opacity:.4;pointer-events:none"'}>
+      <h3>${p.name}</h3>
+      <div class="price">${money(p.amountCents)}<small>/mo</small></div>
+      <ul>${(planFeatures[p.key] || []).map(f => '<li>' + f + '</li>').join('')}</ul>
+      ${p.variationId ? '' : '<p style="font-size:11px;color:#c4432a;margin-top:8px">Coming soon</p>'}
+    </div>`).join('');
+  $('plans').innerHTML = html;
+
+  document.querySelectorAll('.plan[data-key]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.plan').forEach(p => p.classList.remove('selected'));
+      el.classList.add('selected');
+      SELECTED = el.dataset.key;
+      $('pay-form').style.display = 'block';
+    });
+  });
+
+  // Load Web Payments SDK
+  const sdk = document.createElement('script');
+  sdk.src = CFG.environment === 'production'
+    ? 'https://web.squarecdn.com/v1/square.js'
+    : 'https://sandbox.web.squarecdn.com/v1/square.js';
+  sdk.onload = initCard;
+  document.head.appendChild(sdk);
+})();
+
+async function initCard() {
+  try {
+    PAYMENTS = window.Square.payments(CFG.applicationId, CFG.locationId);
+    CARD = await PAYMENTS.card();
+    await CARD.attach('#card-container');
+  } catch (e) {
+    $('msg').innerHTML = '<div class="err">Card form failed to load: ' + (e.message || e) + '</div>';
+  }
+}
+
+$('pay-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!SELECTED || !CARD) return;
+  const btn = $('pay-btn'); const msg = $('msg');
+  btn.disabled = true; btn.textContent = 'Processing...'; msg.innerHTML = '';
+
+  try {
+    const tok = await CARD.tokenize();
+    if (tok.status !== 'OK') throw new Error((tok.errors && tok.errors[0]?.message) || 'Card tokenize failed');
+
+    // SCA verification for future charges
+    const plan = CFG.plans.find(p => p.key === SELECTED);
+    let verifyToken = null;
+    try {
+      const v = await PAYMENTS.verifyBuyer(tok.token, {
+        amount: String(plan.amountCents / 100),
+        currencyCode: 'USD',
+        intent: 'STORE',
+        billingContact: { givenName: $('cardholder').value }
+      });
+      verifyToken = v && v.token;
+    } catch {}
+
+    const r = await fetch('/api/square-create-subscription', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slug, planKey: SELECTED,
+        cardNonce: tok.token, buyerVerificationToken: verifyToken,
+        email: (new URLSearchParams(location.search).get('email') || '').toLowerCase(),
+        name: $('cardholder').value
+      })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Subscription failed');
+
+    $('pay-form').style.display = 'none';
+    $('result').style.display = 'block';
+    $('result').innerHTML = `<div style="text-align:center;padding:20px">
+      <h2 style="font-family:'Playfair Display',serif;color:#1b7a2e">Subscription Active</h2>
+      <p>Your listing is now on the <strong>${data.plan.toUpperCase()}</strong> plan.</p>
+      <p><a href="/my-listing?slug=${encodeURIComponent(slug)}" style="color:#8a6a34">Go to dashboard</a></p>
+    </div>`;
+  } catch (err) {
+    msg.innerHTML = '<div class="err">' + (err.message || 'Failed') + '</div>';
+    btn.disabled = false; btn.textContent = 'Subscribe';
+  }
+});
+</script>
+</body></html>

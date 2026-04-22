@@ -124,7 +124,7 @@ function render() {
         </div>
         <div>
           <span class="plan-badge plan-${l.plan}">${l.plan.toUpperCase()}</span>
-          ${l.plan === 'free' ? '<button class="btn btn-primary" style="margin-left:10px">Upgrade</button>' : ''}
+          ${l.plan === 'free' ? `<a class="btn btn-primary" style="margin-left:10px;text-decoration:none" href="/upgrade?slug=${encodeURIComponent(l.slug)}&email=${encodeURIComponent(l.email || '')}">Upgrade</a>` : ''}
         </div>
       </div>
 
@@ -241,13 +241,13 @@ function renderBilling() {
         <p>You're on the free plan. Upgrade to unlock:</p>
         <ul><li>Priority placement in search results</li><li>Featured badge on your profile</li><li>Advanced lead analytics</li><li>Photo gallery (up to 20 photos)</li></ul>
         <div style="margin-top:20px">
-          <button class="btn btn-primary">Upgrade to Premium - $99/mo</button>
-          <button class="btn" style="margin-left:8px">Upgrade to Elite - $249/mo</button>
+          <a class="btn btn-primary" style="text-decoration:none" href="/upgrade?slug=${encodeURIComponent(l.slug)}&email=${encodeURIComponent(l.email || '')}">Choose a Plan</a>
         </div>
       ` : `
         <p>Plan active since ${fmtDate(l.planStartedAt)}</p>
         <p>Billing: ${l.billingCycle || 'monthly'} &middot; Status: ${l.subscriptionStatus || 'active'}</p>
         ${l.accountCreditCents > 0 ? `<p>Account credit: $${(l.accountCreditCents/100).toFixed(2)}</p>` : ''}
+        <button class="btn" style="margin-top:14px;background:#fff;border:1px solid #c8c0ae" onclick="cancelSubscription()">Cancel Subscription</button>
       `}
     </div>`;
 }
@@ -277,6 +277,21 @@ async function changePass() {
   msg.innerHTML = 'Working...';
   // TODO: implement owner password change endpoint
   msg.innerHTML = '<span class="ok">Password change API coming soon</span>';
+}
+
+async function cancelSubscription() {
+  if (!confirm('Cancel your subscription? Your listing will revert to the free plan at the end of the current billing period.')) return;
+  try {
+    const r = await fetch('/api/square-cancel', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: LISTING.slug })
+    });
+    const data = await r.json();
+    if (!r.ok) { alert(data.error || 'Cancel failed'); return; }
+    alert('Subscription canceled. You will retain access until the end of the current period.');
+    loadDashboard();
+  } catch (e) { alert(e.message); }
 }
 
 loadDashboard();
