@@ -889,9 +889,120 @@ async function generateManagerOverrides() {
   alert('Created ' + (r.created || 0) + ' overrides for ' + period);
 }
 
-// ----- Placeholders
+// ----- CRM Pipeline (outreach)
+let OUT_STATE = { page: 1, status: '', rep: '', q: '' };
+let OUT_SELECTED = new Set();
 async function load_outreach() {
-  document.getElementById('tab-content').innerHTML = '<div class="card"><h3>CRM Pipeline</h3><p>Coming soon - rep workflow + POC management.</p></div>';
+  document.getElementById('tab-actions').innerHTML = `<button class="btn btn-primary" onclick="bulkAssignModal()">Bulk Assign Selected</button>`;
+  document.getElementById('tab-content').innerHTML = `
+    <div id="pipe-counts" style="margin-bottom:14px"></div>
+    <div class="filter-bar">
+      <input id="of-q" placeholder="Search facility or slug..." value="${esc(OUT_STATE.q)}">
+      <select id="of-status">
+        <option value="">All statuses</option>
+        ${['sent','contacted','pitched','converted','declined'].map(s=>`<option ${OUT_STATE.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <input id="of-rep" placeholder="Rep email (or 'unassigned')" value="${esc(OUT_STATE.rep)}">
+      <button class="btn btn-primary" onclick="doOutSearch()">Search</button>
+    </div>
+    <div id="out-body"></div>`;
+  document.getElementById('of-q').addEventListener('keydown', e => { if (e.key === 'Enter') doOutSearch(); });
+  await refreshOutreach();
+}
+function doOutSearch() {
+  OUT_STATE.q = document.getElementById('of-q').value;
+  OUT_STATE.status = document.getElementById('of-status').value;
+  OUT_STATE.rep = document.getElementById('of-rep').value.trim().toLowerCase();
+  OUT_STATE.page = 1;
+  OUT_SELECTED.clear();
+  refreshOutreach();
+}
+async function refreshOutreach() {
+  const qs = new URLSearchParams(Object.entries(OUT_STATE).filter(([,v]) => v !== '')).toString();
+  const r = await api('/admin-outreach?' + qs);
+  const c = r.counts || {};
+  document.getElementById('pipe-counts').innerHTML = `
+    <div class="stat-grid" style="grid-template-columns:repeat(6,1fr)">
+      <div class="stat-card" style="cursor:pointer" onclick="setPipeFilter('','')"><div class="stat-num">${(r.total || 0).toLocaleString()}</div><div class="stat-label">Total</div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="setPipeFilter('','unassigned')"><div class="stat-num">${c.unassigned || 0}</div><div class="stat-label">Unassigned</div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="setPipeFilter('sent','')"><div class="stat-num">${c.sent || 0}</div><div class="stat-label">Sent</div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="setPipeFilter('contacted','')"><div class="stat-num">${c.contacted || 0}</div><div class="stat-label">Contacted</div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="setPipeFilter('pitched','')"><div class="stat-num">${c.pitched || 0}</div><div class="stat-label">Pitched</div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="setPipeFilter('converted','')"><div class="stat-num">${c.converted || 0}</div><div class="stat-label">Converted</div></div>
+    </div>`;
+
+  const rows = (r.outreach || []).map(o => {
+    const l = o.listing || {};
+    const checked = OUT_SELECTED.has(o.id) ? 'checked' : '';
+    return `
+      <tr>
+        <td><input type="checkbox" class="out-chk" data-id="${o.id}" ${checked}></td>
+        <td><strong>${esc(l.name || o.facility_name || o.slug)}</strong><br><span style="font-size:11px;color:#8a6a34"><a href="/doctors/${esc(o.slug)}" target="_blank">${esc(o.slug)}</a></span></td>
+        <td>${esc(l.specialty || '')}<br><span style="font-size:11px;color:#6b6558">${esc(l.city || '')}, ${esc(l.state || '')}</span></td>
+        <td><span class="pill pill-${esc(l.plan || 'free')}">${esc(l.plan || 'free')}</span></td>
+        <td><span class="pill">${esc(o.status)}</span></td>
+        <td>${o.rep ? esc(o.rep) : '<em style="color:#6b6558">unassigned</em>'}${o.locked_rep ? `<br><span style="font-size:10px;color:#1b7a2e">🔒 ${esc(o.locked_rep)}</span>` : ''}</td>
+        <td>${fmtDate(o.updated_at)}</td>
+        <td><div class="btn-row">
+          <button class="btn btn-sm" onclick="outAssign('${o.id}')">Assign</button>
+          <button class="btn btn-sm" onclick="outStatus('${o.id}','${esc(o.status)}')">Status</button>
+          ${!o.locked_rep ? `<button class="btn btn-sm" onclick="outLock('${o.id}','${esc(o.rep || '')}')">Lock</button>` : ''}
+        </div></td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('out-body').innerHTML = `
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th><input type="checkbox" onclick="toggleAllOut(this)"></th><th>Facility</th><th>Specialty/Loc</th><th>Plan</th><th>Status</th><th>Rep</th><th>Updated</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="8">No outreach rows</td></tr>'}</tbody>
+      </table>
+      <div style="padding:12px;text-align:center;border-top:1px solid #e5e1d6">
+        Page ${r.page} of ${r.totalPages || 1} (${(r.total || 0).toLocaleString()} total)
+        ${r.page > 1 ? `<button class="btn btn-sm" onclick="OUT_STATE.page--;refreshOutreach()">Prev</button>` : ''}
+        ${r.page < r.totalPages ? `<button class="btn btn-sm" onclick="OUT_STATE.page++;refreshOutreach()">Next</button>` : ''}
+      </div>
+    </div>`;
+
+  document.querySelectorAll('.out-chk').forEach(cb => cb.addEventListener('change', e => {
+    const id = cb.dataset.id;
+    if (cb.checked) OUT_SELECTED.add(id); else OUT_SELECTED.delete(id);
+  }));
+}
+function toggleAllOut(master) {
+  document.querySelectorAll('.out-chk').forEach(cb => {
+    cb.checked = master.checked;
+    if (master.checked) OUT_SELECTED.add(cb.dataset.id); else OUT_SELECTED.delete(cb.dataset.id);
+  });
+}
+function setPipeFilter(status, rep) {
+  OUT_STATE.status = status; OUT_STATE.rep = rep; OUT_STATE.page = 1;
+  document.getElementById('of-status').value = status;
+  document.getElementById('of-rep').value = rep;
+  refreshOutreach();
+}
+function outAssign(id) {
+  const rep = prompt('Rep email to assign:');
+  if (!rep) return;
+  api('/admin-outreach', { method: 'POST', body: { id, action: 'assign', rep: rep.trim().toLowerCase() } }).then(refreshOutreach);
+}
+function outStatus(id, current) {
+  const s = prompt('New status (sent/contacted/pitched/converted/declined):', current);
+  if (!s) return;
+  api('/admin-outreach', { method: 'POST', body: { id, action: 'setStatus', status: s.trim().toLowerCase() } }).then(refreshOutreach);
+}
+function outLock(id, currentRep) {
+  const rep = prompt('Lock this outreach to rep (permanent attribution):', currentRep);
+  if (!rep) return;
+  if (!confirm('Permanently attribute ' + id + ' to ' + rep + '? This affects commission payouts.')) return;
+  api('/admin-outreach', { method: 'POST', body: { id, action: 'lock', rep: rep.trim().toLowerCase() } }).then(refreshOutreach);
+}
+function bulkAssignModal() {
+  if (!OUT_SELECTED.size) return alert('Select rows first using the checkboxes.');
+  const rep = prompt('Assign ' + OUT_SELECTED.size + ' selected rows to rep:');
+  if (!rep) return;
+  api('/admin-outreach', { method: 'POST', body: { action: 'bulkAssign', ids: [...OUT_SELECTED], rep: rep.trim().toLowerCase() } })
+    .then(() => { OUT_SELECTED.clear(); refreshOutreach(); });
 }
 async function load_submissions() {
   const r = await api('/admin-submissions');
