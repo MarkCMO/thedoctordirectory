@@ -1,0 +1,283 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Rep Portal | The Doctor Directory</title>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+body { background: #f7f5f0; margin: 0; font-family: 'Inter', system-ui, sans-serif; color: #0b1a2f; }
+.login-wrap { max-width: 400px; margin: 100px auto; background: #fff; padding: 32px; border-radius: 10px; border: 1px solid #e5e1d6; }
+.login-wrap h1 { font-family: 'Playfair Display', serif; font-size: 24px; margin: 0 0 20px; }
+.login-wrap input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #c8c0ae; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+.login-wrap button { width: 100%; padding: 14px; background: #C8A45E; border: none; border-radius: 6px; color: #0b1a2f; font-weight: 600; font-size: 15px; cursor: pointer; }
+.err { color: #c4432a; font-size: 13px; margin-top: 8px; }
+
+.top { background: #fff; border-bottom: 1px solid #e5e1d6; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+.top h2 { font-family: 'Playfair Display', serif; margin: 0; font-size: 20px; }
+.top .who { font-size: 13px; color: #6b6558; }
+.top .who strong { color: #0b1a2f; }
+.container { max-width: 1200px; margin: 24px auto; padding: 0 24px; display: grid; grid-template-columns: 1fr 320px; gap: 24px; }
+@media (max-width:900px){ .container { grid-template-columns: 1fr; } }
+.card { background: #fff; border: 1px solid #e5e1d6; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.card h3 { font-family: 'Playfair Display', serif; margin: 0 0 14px; font-size: 18px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat { background: #faf8f3; padding: 14px; border-radius: 6px; text-align: center; }
+.stat .num { font-size: 28px; font-weight: 700; color: #0b1a2f; }
+.stat .lbl { font-size: 12px; color: #6b6558; text-transform: uppercase; letter-spacing: .5px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; padding: 10px 12px; background: #faf8f3; color: #6b6558; font-weight: 600; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #e5e1d6; }
+td { padding: 12px; border-bottom: 1px solid #f0ece0; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; background: #eee; }
+.pill.sent { background: #e3ecf7; color: #1e4976; }
+.pill.contacted { background: #fef3d0; color: #7a5d0c; }
+.pill.pitched { background: #e8d6fa; color: #5a2a8a; }
+.pill.converted { background: #d1f0d8; color: #1b7a2e; }
+.pill.declined { background: #f7d6d0; color: #8a2f1e; }
+.btn { padding: 6px 12px; background: #C8A45E; color: #0b1a2f; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.btn.secondary { background: #fff; border: 1px solid #c8c0ae; }
+
+.modal-back { position: fixed; inset: 0; background: rgba(11,26,47,.6); display: none; align-items: center; justify-content: center; z-index: 100; }
+.modal-back.active { display: flex; }
+.modal { background: #fff; border-radius: 10px; padding: 24px; max-width: 480px; width: 90%; }
+.modal h3 { margin: 0 0 14px; font-family: 'Playfair Display', serif; }
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: #6b6558; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.field select, .field input, .field textarea { width: 100%; padding: 10px; border: 1px solid #c8c0ae; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+.field textarea { min-height: 80px; }
+</style></head>
+<body>
+
+<div id="login" class="login-wrap" style="display:none">
+  <h1>Rep Sign In</h1>
+  <div id="login-err"></div>
+  <input id="l-email" type="email" placeholder="Email">
+  <input id="l-pass" type="password" placeholder="Password">
+  <button onclick="doLogin()">Sign In</button>
+  <p style="text-align:center;font-size:13px;margin-top:12px"><a href="#" onclick="forgotPass();return false" style="color:#8a6a34">Forgot password?</a></p>
+</div>
+
+<div id="app" style="display:none">
+  <div class="top">
+    <h2>Rep Portal</h2>
+    <div class="who">Signed in as <strong id="who"></strong> · <span id="tier-badge"></span> · <a href="#" onclick="doLogout();return false" style="color:#8a6a34;margin-left:10px">Sign out</a></div>
+  </div>
+  <div class="container">
+    <main>
+      <div class="card">
+        <h3>This Week</h3>
+        <div class="stats">
+          <div class="stat"><div class="num" id="s-contacts">-</div><div class="lbl">Contacts</div></div>
+          <div class="stat"><div class="num" id="s-conversions">-</div><div class="lbl">Conversions</div></div>
+          <div class="stat"><div class="num" id="s-tier">-</div><div class="lbl">Commission %</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>My Active Queue</h3>
+        <div id="queue-wrap">Loading...</div>
+      </div>
+
+      <div class="card">
+        <h3>Recent Activity</h3>
+        <div id="recent-wrap">Loading...</div>
+      </div>
+    </main>
+
+    <aside>
+      <div class="card">
+        <h3>Request More Leads</h3>
+        <div class="field"><label>State (2-letter)</label><input id="r-state" maxlength="2" placeholder="NY"></div>
+        <div class="field"><label>City (optional)</label><input id="r-city" placeholder="New York"></div>
+        <div class="field"><label>Specialty (optional)</label><input id="r-category" placeholder="Orthopedics"></div>
+        <div class="field"><label>Notes</label><textarea id="r-notes" placeholder="Any context..."></textarea></div>
+        <button class="btn" onclick="submitRequest()" style="width:100%;padding:10px">Submit Request</button>
+        <div id="r-msg" style="font-size:13px;margin-top:8px"></div>
+      </div>
+
+      <div class="card">
+        <h3>Pending Requests</h3>
+        <div id="pending-wrap">None</div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="modal-back" id="log-modal">
+  <div class="modal">
+    <h3 id="log-title">Log Contact</h3>
+    <div class="field"><label>Channel</label>
+      <select id="lc-channel">
+        <option value="call">Phone Call</option>
+        <option value="voicemail">Voicemail</option>
+        <option value="email">Email</option>
+        <option value="sms">SMS</option>
+        <option value="contact-update">Contact Info Update</option>
+      </select>
+    </div>
+    <div class="field"><label>Update Status</label>
+      <select id="lc-status">
+        <option value="">(no change)</option>
+        <option value="contacted">Contacted</option>
+        <option value="pitched">Pitched</option>
+        <option value="converted">Converted</option>
+        <option value="declined">Declined</option>
+      </select>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="lc-notes"></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn secondary" onclick="closeLogModal()">Cancel</button>
+      <button class="btn" onclick="submitLog()">Save</button>
+    </div>
+    <div id="lc-msg" style="font-size:13px;margin-top:8px"></div>
+  </div>
+</div>
+
+<script>
+let AUTH = null, CURRENT_SLUG = null;
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+async function api(path, opts = {}) {
+  const r = await fetch('/api' + path, {
+    method: opts.method || 'GET', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  let data; try { data = await r.json(); } catch { data = {}; }
+  if (r.status === 401 || r.status === 403) { show('login'); throw new Error('auth'); }
+  if (!r.ok) throw new Error(data.error || 'error');
+  return data;
+}
+function show(which){
+  document.getElementById('login').style.display = which === 'login' ? 'block' : 'none';
+  document.getElementById('app').style.display = which === 'app' ? 'block' : 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('l-email').value.trim().toLowerCase();
+  const password = document.getElementById('l-pass').value;
+  const err = document.getElementById('login-err');
+  err.innerHTML = '';
+  try {
+    const data = await api('/auth-login', { method: 'POST', body: { email, password } });
+    AUTH = data; loadDashboard();
+  } catch (e) {
+    err.innerHTML = '<div class="err">' + esc(e.message || 'Login failed') + '</div>';
+  }
+}
+
+async function forgotPass() {
+  const email = prompt('Your email:');
+  if (!email) return;
+  try { await api('/auth-forgot-password', { method: 'POST', body: { email } });
+    alert('If that email exists, a reset link was sent.');
+  } catch (e) { alert(e.message); }
+}
+
+async function doLogout(){
+  try { await api('/auth-logout', { method: 'POST' }); } catch {}
+  AUTH = null; show('login');
+}
+
+async function loadDashboard() {
+  show('app');
+  try {
+    const d = await api('/rep-dashboard');
+    document.getElementById('who').textContent = d.rep.name || d.rep.email;
+    document.getElementById('tier-badge').textContent = 'Tier ' + d.rep.tier + '%';
+    document.getElementById('s-contacts').textContent = d.stats.weeklyContacts;
+    document.getElementById('s-conversions').textContent = d.stats.conversions;
+    document.getElementById('s-tier').textContent = d.rep.tier + '%';
+
+    renderQueue(d.queue);
+    renderRecent(d.recentContacts);
+    renderPending(d.pendingRequests);
+  } catch (e) { if (e.message !== 'auth') alert(e.message); }
+}
+
+function renderQueue(rows) {
+  const wrap = document.getElementById('queue-wrap');
+  if (!rows.length) { wrap.innerHTML = '<p style="color:#6b6558;font-size:14px">No active leads. Request more below.</p>'; return; }
+  let html = '<table><thead><tr><th>Doctor</th><th>Specialty</th><th>Location</th><th>Status</th><th>Last Contact</th><th></th></tr></thead><tbody>';
+  for (const r of rows) {
+    const l = r.listing || {};
+    html += `<tr>
+      <td><strong>${esc(l.name || r.facility_name || r.slug)}</strong><br><span style="font-size:12px;color:#6b6558">${esc(l.phone || l.email || '')}</span></td>
+      <td>${esc(l.specialty || '')}</td>
+      <td>${esc(l.city || '')}, ${esc(l.state || '')}</td>
+      <td><span class="pill ${esc(r.status)}">${esc(r.status)}</span></td>
+      <td style="font-size:12px;color:#6b6558">${r.first_contacted_at ? new Date(r.first_contacted_at).toLocaleDateString() : 'Never'}</td>
+      <td><button class="btn" onclick="openLogModal('${esc(r.slug)}','${esc(l.name||r.slug)}')">Log</button></td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function renderRecent(rows) {
+  const wrap = document.getElementById('recent-wrap');
+  if (!rows.length) { wrap.innerHTML = '<p style="color:#6b6558;font-size:14px">No activity yet.</p>'; return; }
+  let html = '<table><thead><tr><th>When</th><th>Doctor</th><th>Channel</th><th>Notes</th></tr></thead><tbody>';
+  for (const c of rows) {
+    html += `<tr><td style="font-size:12px;color:#6b6558">${new Date(c.contacted_at).toLocaleString()}</td>
+      <td>${esc(c.slug)}</td><td><span class="pill">${esc(c.channel)}</span></td>
+      <td style="font-size:13px">${esc((c.notes || '').slice(0,100))}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function renderPending(rows) {
+  const wrap = document.getElementById('pending-wrap');
+  if (!rows || !rows.length) { wrap.innerHTML = '<p style="color:#6b6558;font-size:13px">None</p>'; return; }
+  let html = '';
+  for (const r of rows) {
+    html += `<div style="padding:10px;background:#faf8f3;border-radius:6px;margin-bottom:8px;font-size:13px">
+      <strong>${esc(r.state || 'Any')}${r.city ? ', ' + esc(r.city) : ''}</strong> ${r.category ? ' · ' + esc(r.category) : ''}
+      <br><span style="color:#6b6558;font-size:12px">${new Date(r.created_at).toLocaleDateString()}</span></div>`;
+  }
+  wrap.innerHTML = html;
+}
+
+async function submitRequest() {
+  const state = document.getElementById('r-state').value.trim().toUpperCase();
+  const city = document.getElementById('r-city').value.trim();
+  const category = document.getElementById('r-category').value.trim();
+  const notes = document.getElementById('r-notes').value.trim();
+  const msg = document.getElementById('r-msg');
+  try {
+    await api('/rep-request-leads', { method: 'POST', body: { state, city, category, notes } });
+    msg.innerHTML = '<span style="color:#1b7a2e">Request submitted</span>';
+    document.getElementById('r-notes').value = '';
+    loadDashboard();
+  } catch (e) { msg.innerHTML = '<span class="err">' + esc(e.message) + '</span>'; }
+}
+
+function openLogModal(slug, name) {
+  CURRENT_SLUG = slug;
+  document.getElementById('log-title').textContent = 'Log Contact: ' + name;
+  document.getElementById('lc-notes').value = '';
+  document.getElementById('lc-status').value = '';
+  document.getElementById('lc-msg').innerHTML = '';
+  document.getElementById('log-modal').classList.add('active');
+}
+function closeLogModal(){ document.getElementById('log-modal').classList.remove('active'); }
+
+async function submitLog() {
+  const channel = document.getElementById('lc-channel').value;
+  const newStatus = document.getElementById('lc-status').value || null;
+  const notes = document.getElementById('lc-notes').value.trim();
+  const msg = document.getElementById('lc-msg');
+  try {
+    await api('/rep-log-contact', { method: 'POST', body: { slug: CURRENT_SLUG, channel, newStatus, notes } });
+    closeLogModal();
+    loadDashboard();
+  } catch (e) { msg.innerHTML = '<span class="err">' + esc(e.message) + '</span>'; }
+}
+
+// Boot
+(async () => {
+  try { const d = await api('/rep-dashboard'); AUTH = {}; loadDashboard(); }
+  catch { show('login'); }
+})();
+</script>
+</body></html>
