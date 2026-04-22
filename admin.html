@@ -193,7 +193,9 @@ function renderApp() {
       { id: 'outreach', label: 'CRM Pipeline', perm: 'outreach.view' },
       { id: 'reps', label: 'Sales Reps', perm: 'reps.view' },
       { id: 'rep-applications', label: 'Rep Applications', perm: 'reps.view', badge: b.pendingRepApps },
-      { id: 'lead-requests', label: 'Lead Requests', perm: 'reps.view', badge: b.pendingLeadRequests }
+      { id: 'lead-requests', label: 'Lead Requests', perm: 'reps.view', badge: b.pendingLeadRequests },
+      { id: 'payouts', label: 'Payouts', perm: 'payouts.view' },
+      { id: 'managers', label: 'Managers', perm: 'reps.view' }
     ]},
     { group: 'Support', items: [
       { id: 'tickets', label: 'Tickets', perm: 'tickets.view', badge: b.openTickets }
@@ -248,7 +250,7 @@ function loadTab(id) {
   const titles = { dashboard: 'Dashboard', listings: 'Doctors', submissions: 'Submissions', claims: 'Claim Queue',
     'pending-edits': 'Pending Edits', leads: 'Leads', outreach: 'CRM Pipeline', tickets: 'Support Tickets',
     admins: 'Admin Users', audit: 'Audit Log', reps: 'Sales Reps', 'rep-applications': 'Rep Applications',
-    'lead-requests': 'Lead Requests' };
+    'lead-requests': 'Lead Requests', payouts: 'Rep Payouts', managers: 'Managers' };
   document.getElementById('tab-title').textContent = titles[id] || id;
   document.getElementById('tab-actions').innerHTML = '';
   document.getElementById('tab-content').innerHTML = '<div class="card">Loading...</div>';
@@ -618,7 +620,7 @@ async function load_reps() {
         <td><span class="pill pill-elite">${rep.commission_tier}%</span><br><span style="font-size:10px;color:#6b6558">peak ${rep.highest_tier_reached || rep.commission_tier}%</span></td>
         <td>${s.weeklyContacts || 0}</td>
         <td>${s.conversions || 0}</td>
-        <td>${esc(rep.payment_method || '-')}<br><span style="font-size:11px;color:#6b6558">${esc(rep.payout_handle || '')}</span></td>
+        <td>${esc(rep.payout_method || '-')}<br><span style="font-size:11px;color:#6b6558">${esc(rep.payout_handle || '')}</span></td>
         <td>${rep.active ? '✅' : '⛔'}</td>
         <td><div class="btn-row">
           <button class="btn btn-sm" onclick="repSetTier('${esc(rep.email)}', ${rep.commission_tier})">Set Tier</button>
@@ -737,6 +739,154 @@ async function rejectLeadReq(id) {
   const note = prompt('Reason (optional):') || '';
   await api('/admin-reps', { method: 'POST', body: { action: 'rejectLeadRequest', id, adminNote: note } });
   load_lead_requests();
+}
+
+// ----- Payouts
+let PAYOUT_PERIOD = null;
+async function load_payouts() {
+  if (!PAYOUT_PERIOD) {
+    const d = new Date(); PAYOUT_PERIOD = d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-01';
+  }
+  document.getElementById('tab-actions').innerHTML = `
+    <input id="pay-period" type="month" value="${PAYOUT_PERIOD.slice(0,7)}" style="padding:8px;border:1px solid #c8c0ae;border-radius:6px">
+    <button class="btn" onclick="changePayoutPeriod()">Load</button>
+    <button class="btn btn-primary" onclick="generatePayouts()">Generate Current Month</button>`;
+
+  const r = await api('/admin-payouts?period=' + PAYOUT_PERIOD);
+  const t = r.totals || {};
+  const rows = (r.payouts || []).map(p => `
+    <tr>
+      <td><strong>${esc(p.rep?.name || p.rep?.email || p.rep_id)}</strong><br><span style="font-size:11px;color:#6b6558">${esc(p.rep?.email || '')}</span></td>
+      <td>${p.tier_pct}%</td>
+      <td>${fmt$(p.gross_mrr_cents || 0)}</td>
+      <td>${p.clawback_cents ? '-' + fmt$(p.clawback_cents) : '-'}</td>
+      <td><strong>${fmt$(p.net_cents || 0)}</strong></td>
+      <td>${esc(p.rep?.payout_method || '-')}<br><span style="font-size:11px;color:#6b6558">${esc(p.rep?.payout_handle || '')}</span></td>
+      <td><span class="pill ${p.status === 'paid' ? 'pill-new' : p.status === 'approved' ? 'pill-elite' : ''}">${p.status}</span></td>
+      <td><div class="btn-row">
+        ${p.status === 'pending' ? `<button class="btn btn-sm" onclick="payoutAction(${p.id},'approve')">Approve</button>` : ''}
+        ${p.status === 'approved' ? `<button class="btn btn-primary btn-sm" onclick="payoutMarkPaid(${p.id})">Mark Paid</button>` : ''}
+        ${p.status !== 'paid' && p.status !== 'skipped' ? `<button class="btn btn-sm" onclick="payoutSkip(${p.id})">Skip</button>` : ''}
+        <button class="btn btn-sm" onclick='viewPayout(${JSON.stringify(p).replace(/'/g,"&#39;")})'>Detail</button>
+      </div></td>
+    </tr>`).join('');
+
+  document.getElementById('tab-content').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">${t.count || 0}</div><div class="stat-label">Reps</div></div>
+      <div class="stat-card"><div class="stat-num">${fmt$(t.gross || 0)}</div><div class="stat-label">Gross MRR Attributed</div></div>
+      <div class="stat-card"><div class="stat-num">${fmt$(t.net || 0)}</div><div class="stat-label">Net Commission</div></div>
+      <div class="stat-card"><div class="stat-num">${fmt$(t.pending || 0)}</div><div class="stat-label">Pending Payout</div></div>
+      <div class="stat-card"><div class="stat-num">${fmt$(t.paid || 0)}</div><div class="stat-label">Paid This Period</div></div>
+    </div>
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th>Rep</th><th>Tier</th><th>Gross MRR</th><th>Clawback</th><th>Net</th><th>Payout Via</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="8">No payouts for ' + PAYOUT_PERIOD + '. Click "Generate Current Month" to create them.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+function changePayoutPeriod() {
+  const v = document.getElementById('pay-period').value;
+  if (v) { PAYOUT_PERIOD = v + '-01'; load_payouts(); }
+}
+async function generatePayouts() {
+  if (!confirm('Generate payouts for ' + PAYOUT_PERIOD + '? This creates pending rows for every active rep based on converted listings.')) return;
+  const r = await api('/admin-payouts', { method: 'POST', body: { action: 'generate', period: PAYOUT_PERIOD } });
+  alert('Created ' + (r.created || 0) + ' payouts');
+  load_payouts();
+}
+async function payoutAction(id, action) {
+  await api('/admin-payouts', { method: 'POST', body: { action, id } });
+  load_payouts();
+}
+async function payoutMarkPaid(id) {
+  const ref = prompt('ACH / transaction reference:') || '';
+  await api('/admin-payouts', { method: 'POST', body: { action: 'markPaid', id, achReference: ref } });
+  load_payouts();
+}
+async function payoutSkip(id) {
+  const reason = prompt('Skip reason:') || '';
+  await api('/admin-payouts', { method: 'POST', body: { action: 'skip', id, reason } });
+  load_payouts();
+}
+function viewPayout(p) {
+  const items = (p.line_items || []).map(li => `<tr><td>${esc(li.name || li.slug)}</td><td>${esc(li.plan || '')}</td><td>${fmt$(li.mrr_cents || 0)}</td></tr>`).join('');
+  showModal(`
+    <h3>Payout Detail: ${esc(p.rep?.email || p.rep_id)}</h3>
+    <p>Period ${esc(p.period_start)} · Tier ${p.tier_pct}% · Status ${esc(p.status)}</p>
+    <p>Gross MRR: <strong>${fmt$(p.gross_mrr_cents || 0)}</strong> · Net: <strong>${fmt$(p.net_cents || 0)}</strong>${p.ach_reference ? ' · Ref: ' + esc(p.ach_reference) : ''}</p>
+    <table class="admin-table"><thead><tr><th>Listing</th><th>Plan</th><th>MRR</th></tr></thead><tbody>${items || '<tr><td colspan="3">No line items</td></tr>'}</tbody></table>
+    <button class="btn" onclick="hideModal()" style="margin-top:12px">Close</button>
+  `);
+}
+
+// ----- Managers
+async function load_managers() {
+  document.getElementById('tab-actions').innerHTML = `
+    <button class="btn" onclick="recomputeAllManagers()">Recompute All</button>
+    <button class="btn btn-primary" onclick="generateManagerOverrides()">Generate Overrides</button>`;
+  const r = await api('/admin-managers');
+  const rows = (r.managers || []).map(m => {
+    const s = m.stats || {};
+    return `
+      <tr>
+        <td><strong>${esc(m.name || m.email)}</strong><br><span style="font-size:11px;color:#6b6558">${esc(m.email)} · ${esc(m.role)}</span></td>
+        <td>T${s.tier || 1}<br><span style="font-size:11px;color:#6b6558">${s.override_pct || 5}% override</span></td>
+        <td>${s.repCount || 0}</td>
+        <td>${fmt$(s.team_book_mrr_cents || 0)}</td>
+        <td>${s.team_vested_sponsor_count || 0}</td>
+        <td>${s.last_recompute_at ? fmtDate(s.last_recompute_at) : '-'}</td>
+        <td><div class="btn-row">
+          <button class="btn btn-sm" onclick="managerSetTier('${esc(m.email)}', ${s.tier || 1}, ${s.override_pct || 5})">Set Tier</button>
+          <button class="btn btn-sm" onclick="managerRecompute('${esc(m.email)}')">Recompute</button>
+          <button class="btn btn-sm" onclick="managerAssignRep('${esc(m.email)}')">Assign Rep</button>
+        </div></td>
+      </tr>`;
+  }).join('');
+  document.getElementById('tab-content').innerHTML = `
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th>Manager</th><th>Tier</th><th>Reps</th><th>Team Book MRR</th><th>Vested Sponsors</th><th>Last Recompute</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="7">No managers. Create one from Admin Users with role sales-manager or general-manager.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+async function recomputeAllManagers() {
+  const r = await api('/admin-managers', { method: 'POST', body: { action: 'recompute' } });
+  alert('Recomputed ' + (r.total || 0) + ' managers');
+  load_managers();
+}
+async function managerRecompute(email) {
+  await api('/admin-managers', { method: 'POST', body: { action: 'recompute', managerEmail: email } });
+  load_managers();
+}
+function managerSetTier(email, tier, pct) {
+  showModal(`
+    <h3>Set Tier: ${esc(email)}</h3>
+    <label>Tier</label><input id="mt-tier" type="number" value="${tier}" min="1" max="10">
+    <label>Override % on team MRR</label><input id="mt-pct" type="number" value="${pct}" min="0" max="20">
+    <button class="btn btn-primary" onclick="doManagerSetTier('${esc(email)}')">Save</button>
+    <button class="btn" onclick="hideModal()">Cancel</button>
+  `);
+}
+async function doManagerSetTier(email) {
+  const tier = parseInt(document.getElementById('mt-tier').value, 10);
+  const overridePct = parseInt(document.getElementById('mt-pct').value, 10);
+  await api('/admin-managers', { method: 'POST', body: { action: 'setTier', managerEmail: email, tier, overridePct } });
+  hideModal();
+  load_managers();
+}
+function managerAssignRep(email) {
+  const repEmail = prompt('Rep email to assign to ' + email + ':');
+  if (!repEmail) return;
+  api('/admin-managers', { method: 'POST', body: { action: 'assignRep', managerEmail: email, repEmail } }).then(() => load_managers());
+}
+async function generateManagerOverrides() {
+  const period = prompt('Period (YYYY-MM-01):', new Date().toISOString().slice(0,7) + '-01');
+  if (!period) return;
+  const r = await api('/admin-managers', { method: 'POST', body: { action: 'generateOverrides', period } });
+  alert('Created ' + (r.created || 0) + ' overrides for ' + period);
 }
 
 // ----- Placeholders

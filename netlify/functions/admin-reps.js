@@ -91,7 +91,7 @@ exports.handler = async (event) => {
     const { data: rep } = await sb().from('reps').upsert({
       tenant_id: tenantId, name: app.name, email: app.email,
       commission_tier: tier, highest_tier_reached: tier,
-      payment_method: app.payment_method, payout_handle: app.payment_handle,
+      payout_method: app.payment_method, payout_handle: app.payment_handle,
       preferred_categories: app.preferred_categories || [],
       application_id: app.id, active: true
     }, { onConflict: 'tenant_id,email' }).select().single();
