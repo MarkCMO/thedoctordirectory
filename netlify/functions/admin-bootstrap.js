@@ -22,7 +22,8 @@ exports.handler = async (event) => {
     { count: openTickets },
     { count: newLeads },
     { count: pendingRepApps },
-    { count: pendingLeadRequests }
+    { count: pendingLeadRequests },
+    { count: pendingReviews }
   ] = await Promise.all([
     sb().from('pending_listing_edits').select('*', { count: 'exact', head: true }).eq('tenant_id', tenant.id).eq('status', 'pending'),
     sb().from('claims').select('*', { count: 'exact', head: true }).eq('tenant_id', tenant.id).eq('status', 'pending'),
@@ -30,7 +31,8 @@ exports.handler = async (event) => {
     sb().from('support_tickets').select('*', { count: 'exact', head: true }).eq('tenant_id', tenant.id).in('status', ['open', 'in_progress']),
     sb().from('leads').select('*', { count: 'exact', head: true }).eq('tenant_id', tenant.id).eq('status', 'new'),
     sb().from('rep_applications').select('*', { count: 'exact', head: true }).eq('tenant_id', tenant.id).eq('status', 'submitted'),
-    sb().from('rep_lead_requests').select('*', { count: 'exact', head: true }).eq('tenant_id', tenant.id).eq('status', 'pending')
+    sb().from('rep_lead_requests').select('*', { count: 'exact', head: true }).eq('tenant_id', tenant.id).eq('status', 'pending'),
+    sb().from('reviews').select('*', { count: 'exact', head: true }).eq('tenant_id', tenant.id).eq('status', 'pending').then(r => r, () => ({ count: 0 }))
   ]);
 
   const permissions = [...(auth.permissions || []), ...(DEFAULT_PERMISSIONS[auth.role] || [])];
@@ -46,7 +48,8 @@ exports.handler = async (event) => {
       openTickets: openTickets || 0,
       newLeads: newLeads || 0,
       pendingRepApps: pendingRepApps || 0,
-      pendingLeadRequests: pendingLeadRequests || 0
+      pendingLeadRequests: pendingLeadRequests || 0,
+      pendingReviews: pendingReviews || 0
     }
   });
 };

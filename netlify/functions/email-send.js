@@ -60,6 +60,17 @@ async function sendEvent(opts) {
   if (!to) throw new Error('to required');
   const event = opts.event || 'generic';
 
+  // DB template override: if an active template exists with key === event, use its subject/html
+  if (opts.tenantId && !opts.skipTemplate) {
+    try {
+      const { data: tmpl } = await sb().from('email_templates')
+        .select('subject,html,text').eq('tenant_id', opts.tenantId).eq('key', event).eq('is_active', true).maybeSingle();
+      if (tmpl) {
+        opts = { ...opts, subject: opts.subject || tmpl.subject, html: tmpl.html, text: opts.text || tmpl.text, template_id: event };
+      }
+    } catch {}
+  }
+
   if (await isSuppressed(to)) {
     await sb().from('email_log').insert({
       tenant_id: opts.tenantId, to_email: to, event, subject: opts.subject,

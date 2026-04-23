@@ -187,7 +187,8 @@ function renderApp() {
       { id: 'listings', label: 'Doctors', perm: 'listings.view' },
       { id: 'submissions', label: 'Submissions', perm: 'submissions.moderate', badge: b.pendingSubmissions },
       { id: 'claims', label: 'Claim Queue', perm: 'claims.moderate', badge: b.pendingClaims },
-      { id: 'pending-edits', label: 'Pending Edits', perm: 'listings.edit', badge: b.pendingEdits }
+      { id: 'pending-edits', label: 'Pending Edits', perm: 'listings.edit', badge: b.pendingEdits },
+      { id: 'reviews', label: 'Reviews', perm: 'listings.edit', badge: b.pendingReviews }
     ]},
     { group: 'Sales', items: [
       { id: 'leads', label: 'Leads', perm: 'listings.view', badge: b.newLeads },
@@ -205,7 +206,8 @@ function renderApp() {
       { id: 'admins', label: 'Admin Users', perm: 'admins.manage' },
       { id: 'audit', label: 'Audit Log', perm: 'admins.manage' },
       { id: 'system-log', label: 'System Log', perm: 'admins.manage' },
-      { id: 'email-log', label: 'Email Log', perm: 'admins.manage' }
+      { id: 'email-log', label: 'Email Log', perm: 'admins.manage' },
+      { id: 'email-templates', label: 'Email Templates', perm: 'settings.manage' }
     ]}
   ];
 
@@ -254,7 +256,7 @@ function loadTab(id) {
     'pending-edits': 'Pending Edits', leads: 'Leads', outreach: 'CRM Pipeline', tickets: 'Support Tickets',
     admins: 'Admin Users', audit: 'Audit Log', reps: 'Sales Reps', 'rep-applications': 'Rep Applications',
     'lead-requests': 'Lead Requests', payouts: 'Rep Payouts', managers: 'Managers',
-    'system-log': 'System Log', 'email-log': 'Email Log' };
+    'system-log': 'System Log', 'email-log': 'Email Log', reviews: 'Reviews', 'email-templates': 'Email Templates' };
   document.getElementById('tab-title').textContent = titles[id] || id;
   document.getElementById('tab-actions').innerHTML = '';
   document.getElementById('tab-content').innerHTML = '<div class="card">Loading...</div>';
@@ -1134,6 +1136,115 @@ async function load_email_log() {
         <tbody>${rows || '<tr><td colspan="6">No emails sent yet</td></tr>'}</tbody>
       </table>
     </div>`;
+}
+
+let REVIEW_STATUS = 'pending';
+async function load_reviews() {
+  const r = await api('/admin-reviews?status=' + encodeURIComponent(REVIEW_STATUS));
+  const c = r.counts || {};
+  const tabs = ['pending', 'approved', 'flagged', 'rejected', 'all'].map(s =>
+    `<button class="btn btn-sm ${REVIEW_STATUS === s ? 'btn-primary' : ''}" onclick="setReviewStatus('${s}')">${s[0].toUpperCase() + s.slice(1)}${c[s] != null ? ' (' + c[s] + ')' : ''}</button>`
+  ).join(' ');
+  const rows = (r.reviews || []).map(rv => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:10px">
+        <div>
+          <strong>${esc(rv.reviewer_name)}</strong>
+          <span style="color:#C8A45E">${'★'.repeat(rv.rating)}${'☆'.repeat(5 - rv.rating)}</span>
+          ${rv.featured ? '<span class="pill" style="background:#fff2d6;color:#8a6a34">Featured</span>' : ''}
+          <br><span style="font-size:12px;color:#6b6558">${esc(rv.slug)} · ${esc(rv.reviewer_email || '')} · ${fmtDate(rv.created_at)}</span>
+        </div>
+        <span class="pill">${esc(rv.status)}</span>
+      </div>
+      ${rv.title ? `<p style="margin:8px 0 4px"><strong>${esc(rv.title)}</strong></p>` : ''}
+      ${rv.body ? `<p style="font-size:13px;color:#333;margin:4px 0">${esc(rv.body)}</p>` : ''}
+      <div class="btn-row" style="margin-top:10px">
+        ${rv.status !== 'approved' ? `<button class="btn btn-primary btn-sm" onclick="reviewAction('${rv.id}','approve')">Approve</button>` : ''}
+        ${rv.status === 'approved' && !rv.featured ? `<button class="btn btn-sm" onclick="reviewAction('${rv.id}','feature')">Feature</button>` : ''}
+        ${rv.featured ? `<button class="btn btn-sm" onclick="reviewAction('${rv.id}','unfeature')">Unfeature</button>` : ''}
+        ${rv.status !== 'rejected' ? `<button class="btn btn-sm" onclick="reviewAction('${rv.id}','reject', true)">Reject</button>` : ''}
+        ${rv.status !== 'flagged' ? `<button class="btn btn-sm" onclick="reviewAction('${rv.id}','flag', true)">Flag</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="reviewAction('${rv.id}','delete')">Delete</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('tab-content').innerHTML = `
+    <div class="card" style="display:flex;gap:6px;flex-wrap:wrap">${tabs}</div>
+    ${rows || '<div class="card">No reviews in this bucket</div>'}`;
+}
+function setReviewStatus(s) { REVIEW_STATUS = s; load_reviews(); }
+async function reviewAction(id, action, askNote) {
+  if (action === 'delete' && !confirm('Permanently delete this review?')) return;
+  const note = askNote ? (prompt('Note (optional):') || '') : '';
+  await api('/admin-reviews', { method: 'POST', body: { id, action, note } });
+  load_reviews();
+}
+
+async function load_email_templates() {
+  const r = await api('/admin-email-templates');
+  const rows = (r.templates || []).map(t => `
+    <tr>
+      <td><code>${esc(t.key)}</code>${t.description ? `<br><span style="font-size:11px;color:#6b6558">${esc(t.description)}</span>` : ''}</td>
+      <td>${esc(t.subject)}</td>
+      <td>${t.is_active ? '<span class="pill" style="background:#e7f3e9;color:#1b7a2e">Active</span>' : '<span class="pill">Inactive</span>'}</td>
+      <td>${fmtDate(t.updated_at)}</td>
+      <td><button class="btn btn-sm" onclick='editTemplate(${JSON.stringify(t).replace(/'/g, "&#39;")})'>Edit</button>
+          <button class="btn btn-sm" onclick="testSendTemplate('${esc(t.key)}')">Test Send</button></td>
+    </tr>`).join('');
+  document.getElementById('tab-content').innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0">Email Templates</h3>
+        <button class="btn btn-primary btn-sm" onclick="editTemplate(null)">+ New Template</button>
+      </div>
+      <p style="font-size:13px;color:#6b6558">Store-backed templates override inline HTML in senders. Placeholders: {{unsubscribe_url}}.</p>
+      <table style="margin-top:12px">
+        <thead><tr><th>Key</th><th>Subject</th><th>Status</th><th>Updated</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5">No templates yet</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+function editTemplate(t) {
+  const tmpl = t || { key: '', subject: '', html: '', description: '', is_active: true };
+  const content = `
+    <div class="card">
+      <h3>${t ? 'Edit' : 'New'} Template</h3>
+      <div class="field-row"><label>Key</label><input id="tmpl-key" value="${esc(tmpl.key)}" ${t ? 'readonly' : ''}></div>
+      <div class="field-row"><label>Description</label><input id="tmpl-desc" value="${esc(tmpl.description || '')}"></div>
+      <div class="field-row"><label>Subject</label><input id="tmpl-subject" value="${esc(tmpl.subject)}"></div>
+      <div class="field-row"><label>HTML</label><textarea id="tmpl-html" style="min-height:220px;font-family:ui-monospace,Menlo,monospace;font-size:12px">${esc(tmpl.html)}</textarea></div>
+      <div class="field-row"><label><input type="checkbox" id="tmpl-active" ${tmpl.is_active ? 'checked' : ''}> Active</label></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveTemplate(${t ? `'${t.id}'` : 'null'})">Save</button>
+        <button class="btn" onclick="load_email_templates()">Cancel</button>
+        ${t ? `<button class="btn btn-danger" style="margin-left:auto" onclick="deleteTemplate('${t.id}')">Delete</button>` : ''}
+      </div>
+    </div>`;
+  document.getElementById('tab-content').innerHTML = content;
+}
+async function saveTemplate(id) {
+  const body = {
+    id: id || undefined,
+    key: document.getElementById('tmpl-key').value.trim(),
+    subject: document.getElementById('tmpl-subject').value.trim(),
+    html: document.getElementById('tmpl-html').value,
+    description: document.getElementById('tmpl-desc').value.trim(),
+    is_active: document.getElementById('tmpl-active').checked
+  };
+  if (!body.key || !body.subject) { alert('key + subject required'); return; }
+  const r = await api('/admin-email-templates', { method: 'POST', body: { action: 'save', ...body } });
+  if (r.error) { alert(r.error); return; }
+  load_email_templates();
+}
+async function deleteTemplate(id) {
+  if (!confirm('Delete this template?')) return;
+  await api('/admin-email-templates', { method: 'POST', body: { action: 'delete', id } });
+  load_email_templates();
+}
+async function testSendTemplate(key) {
+  const to = prompt('Send test to email:');
+  if (!to) return;
+  const r = await api('/admin-email-templates', { method: 'POST', body: { action: 'test-send', key, to } });
+  alert(r.error ? 'Error: ' + r.error : 'Test sent to ' + to);
 }
 
 async function load_submissions() {
