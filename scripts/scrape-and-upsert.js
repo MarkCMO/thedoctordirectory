@@ -102,7 +102,87 @@ function mapToRow(p) {
   };
 }
 
+async function scrapeFor(state, specialty, cityFilter, limit) {
+  // Find already-scraped NPIs for this state to skip
+  const { data: existing } = await sb.from('listings')
+    .select('npi').eq('tenant_id', 'doctordir').eq('state_code', state).not('npi', 'is', null);
+  const existingNpis = new Set((existing || []).map(r => r.npi));
+
+  const specialties = specialty ? [specialty] : SPECIALTIES;
+  const newRows = [];
+  for (const sp of specialties) {
+    if (newRows.length >= limit) break;
+    for (let skip = 0; skip < 1200 && newRows.length < limit; skip += 200) {
+      let url = `https://npiregistry.cms.hhs.gov/api/?version=2.1&state=${state}&taxonomy_description=${encodeURIComponent(sp)}&limit=200&skip=${skip}`;
+      if (cityFilter) url += `&city=${encodeURIComponent(cityFilter)}`;
+      let resp;
+      try { resp = await httpGet(url); }
+      catch (e) { console.error(`[scraper] fetch error ${state}/${sp}@${skip}:`, e.message); break; }
+      const results = resp.results || [];
+      if (results.length === 0) break;
+      for (const p of results) {
+        if (existingNpis.has(String(p.number))) continue;
+        const row = mapToRow(p);
+        if (!row) continue;
+        if (cityFilter && row.city.toLowerCase() !== cityFilter.toLowerCase()) continue;
+        newRows.push(row); existingNpis.add(row.npi);
+        if (newRows.length >= limit) break;
+      }
+      await sleep(RATE_MS);
+    }
+  }
+
+  if (!newRows.length) return 0;
+  const bySlug = new Map();
+  for (const r of newRows) bySlug.set(r.slug, r);
+  const uniq = Array.from(bySlug.values());
+
+  const BATCH = 200;
+  let added = 0;
+  for (let i = 0; i < uniq.length; i += BATCH) {
+    const slice = uniq.slice(i, i + BATCH);
+    const { error } = await sb.from('listings').upsert(slice, { onConflict: 'tenant_id,slug', ignoreDuplicates: true });
+    if (error) console.error(`[scraper] batch ${i} error:`, error.message);
+    else added += slice.length;
+  }
+  return added;
+}
+
+async function processApprovedLeadRequests() {
+  const { data: reqs } = await sb.from('rep_lead_requests').select('*').eq('status', 'approved').order('created_at', { ascending: true }).limit(10);
+  if (!reqs?.length) return 0;
+  console.log(`[scraper] Processing ${reqs.length} approved lead requests`);
+  let totalAdded = 0;
+  for (const req of reqs) {
+    if (!req.state) { await sb.from('rep_lead_requests').update({ status: 'completed', admin_note: 'skipped: no state' }).eq('id', req.id); continue; }
+    console.log(`[scraper] Request ${req.id}: ${req.state}${req.city ? '/' + req.city : ''} ${req.category || 'all specialties'}`);
+    const added = await scrapeFor(req.state.toUpperCase(), req.category || null, req.city || null, 500);
+    await sb.from('rep_lead_requests').update({
+      status: 'completed',
+      admin_note: `scraped ${added} doctors`,
+      updated_at: new Date().toISOString()
+    }).eq('id', req.id);
+    await sb.from('scrape_queue').insert({
+      tenant_id: req.tenant_id, source: 'npi_registry', state: req.state,
+      status: 'completed', results_count: added, completed_at: new Date().toISOString()
+    }).then(() => {}).catch(() => {});
+    totalAdded += added;
+  }
+  console.log(`[scraper] Lead requests done. Added ${totalAdded} doctors across ${reqs.length} requests.`);
+  return totalAdded;
+}
+
 async function main() {
+  // Phase 1: process any approved rep lead requests first
+  try {
+    const reqAdded = await processApprovedLeadRequests();
+    if (reqAdded > 0 && !process.env.FORCE_STATE_ROTATION) {
+      console.log('[scraper] Lead requests handled this run; skipping state rotation.');
+      return;
+    }
+  } catch (e) { console.error('[scraper] lead request error:', e.message); }
+
+  // Phase 2: weekly state rotation
   const state = pickState();
   console.log(`[scraper] State: ${state}, limit: ${LIMIT}`);
 

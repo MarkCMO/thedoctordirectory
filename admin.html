@@ -203,7 +203,9 @@ function renderApp() {
     ]},
     { group: 'Admin', items: [
       { id: 'admins', label: 'Admin Users', perm: 'admins.manage' },
-      { id: 'audit', label: 'Audit Log', perm: 'admins.manage' }
+      { id: 'audit', label: 'Audit Log', perm: 'admins.manage' },
+      { id: 'system-log', label: 'System Log', perm: 'admins.manage' },
+      { id: 'email-log', label: 'Email Log', perm: 'admins.manage' }
     ]}
   ];
 
@@ -251,7 +253,8 @@ function loadTab(id) {
   const titles = { dashboard: 'Dashboard', analytics: 'Analytics', listings: 'Doctors', submissions: 'Submissions', claims: 'Claim Queue',
     'pending-edits': 'Pending Edits', leads: 'Leads', outreach: 'CRM Pipeline', tickets: 'Support Tickets',
     admins: 'Admin Users', audit: 'Audit Log', reps: 'Sales Reps', 'rep-applications': 'Rep Applications',
-    'lead-requests': 'Lead Requests', payouts: 'Rep Payouts', managers: 'Managers' };
+    'lead-requests': 'Lead Requests', payouts: 'Rep Payouts', managers: 'Managers',
+    'system-log': 'System Log', 'email-log': 'Email Log' };
   document.getElementById('tab-title').textContent = titles[id] || id;
   document.getElementById('tab-actions').innerHTML = '';
   document.getElementById('tab-content').innerHTML = '<div class="card">Loading...</div>';
@@ -1089,6 +1092,50 @@ function bulkAssignModal() {
   api('/admin-outreach', { method: 'POST', body: { action: 'bulkAssign', ids: [...OUT_SELECTED], rep: rep.trim().toLowerCase() } })
     .then(() => { OUT_SELECTED.clear(); refreshOutreach(); });
 }
+// ----- System Log
+async function load_system_log() {
+  const r = await api('/admin-system-log?limit=200');
+  const levelPill = { info: '', warn: 'pill-elite', error: 'pill-sponsor' };
+  const rows = (r.log || []).map(row => `
+    <tr>
+      <td style="white-space:nowrap">${new Date(row.created_at).toLocaleString()}</td>
+      <td><span class="pill ${levelPill[row.level] || ''}">${esc(row.level)}</span></td>
+      <td><code>${esc(row.source)}</code></td>
+      <td><strong>${esc(row.event)}</strong>${row.message ? '<br><span style="font-size:11px;color:#6b6558">' + esc(row.message) + '</span>' : ''}</td>
+      <td>${row.duration_ms ? row.duration_ms + 'ms' : ''}</td>
+      <td><details><summary>meta</summary><pre style="font-size:11px;max-width:300px;white-space:pre-wrap">${esc(JSON.stringify(row.meta || {}, null, 2))}</pre></details></td>
+    </tr>`).join('');
+  document.getElementById('tab-content').innerHTML = `
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th>When</th><th>Level</th><th>Source</th><th>Event</th><th>Duration</th><th>Meta</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6">No log entries</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+// ----- Email Log
+async function load_email_log() {
+  const r = await api('/admin-system-log?type=email&limit=200');
+  const statusPill = { sent: 'pill-new', failed: 'pill-urgent', bounced: 'pill-urgent', suppressed: 'pill-elite' };
+  const rows = (r.emails || []).map(e => `
+    <tr>
+      <td style="white-space:nowrap">${new Date(e.sent_at).toLocaleString()}</td>
+      <td>${esc(e.to_email)}</td>
+      <td>${esc(e.subject || '')}</td>
+      <td><code>${esc(e.event || '')}</code></td>
+      <td><span class="pill ${statusPill[e.status] || ''}">${esc(e.status)}</span></td>
+      <td>${e.error_message ? '<span style="color:#c4432a;font-size:11px">' + esc(e.error_message) + '</span>' : ''}</td>
+    </tr>`).join('');
+  document.getElementById('tab-content').innerHTML = `
+    <div class="card" style="padding:0">
+      <table class="admin-table">
+        <thead><tr><th>When</th><th>To</th><th>Subject</th><th>Event</th><th>Status</th><th>Error</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6">No emails sent yet</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
 async function load_submissions() {
   const r = await api('/admin-submissions');
   const rows = (r.submissions || []).map(s => {

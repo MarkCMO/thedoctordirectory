@@ -1,0 +1,132 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Manager Portal | The Doctor Directory</title>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+body { background: #f7f5f0; font-family: 'Inter', system-ui, sans-serif; color: #0b1a2f; margin: 0; }
+.topbar { background: #0b1a2f; color: #fff; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+.topbar h1 { font-family: 'Playfair Display', serif; font-size: 20px; margin: 0; }
+.topbar a { color: rgba(255,255,255,.7); text-decoration: none; font-size: 13px; margin-left: 16px; }
+.w { max-width: 1080px; margin: 28px auto; padding: 0 24px; }
+.card { background: #fff; border: 1px solid #e5e1d6; border-radius: 10px; padding: 22px; margin-bottom: 20px; }
+h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin: 0 0 14px; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.stat-card { background: #fff; border: 1px solid #e5e1d6; border-radius: 8px; padding: 16px; }
+.stat-num { font-family: 'Playfair Display', serif; font-size: 26px; color: #0b1a2f; font-weight: 700; }
+.stat-label { font-size: 12px; color: #6b6558; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #f0ede3; }
+th { background: #faf8f3; color: #6b6558; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; background: #fff2d6; color: #8a6a34; }
+.login-box { max-width: 400px; margin: 100px auto; background: #fff; padding: 32px; border-radius: 8px; border: 1px solid #e5e1d6; }
+.login-box input { width: 100%; padding: 10px 12px; margin: 8px 0; border: 1px solid #c8c0ae; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+.btn { display: inline-block; padding: 10px 18px; background: #C8A45E; border: none; border-radius: 6px; color: #0b1a2f; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 14px; }
+.err { color: #c4432a; font-size: 13px; margin-top: 8px; }
+</style></head>
+<body>
+<div id="app"></div>
+
+<script>
+const API = '/api';
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function money(c) { return '$' + ((c || 0) / 100).toFixed(2); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '-'; }
+
+async function api(path, opts = {}) {
+  const r = await fetch(API + path, { credentials: 'include', headers: { 'Content-Type': 'application/json' }, ...opts });
+  if (r.status === 401 || r.status === 403) { renderLogin(); throw new Error('auth'); }
+  return r.json();
+}
+
+function renderLogin() {
+  document.getElementById('app').innerHTML = `
+    <div class="login-box">
+      <h2 style="font-family:'Playfair Display',serif;margin:0 0 20px">Manager Login</h2>
+      <p style="color:#6b6558;font-size:13px;margin:0 0 16px">Access requires a sales-manager or general-manager role.</p>
+      <div id="li-err"></div>
+      <input id="li-email" type="email" placeholder="Email">
+      <input id="li-pass" type="password" placeholder="Password">
+      <button class="btn" style="width:100%" onclick="doLogin()">Sign In</button>
+    </div>`;
+}
+
+async function doLogin() {
+  const email = document.getElementById('li-email').value.trim();
+  const password = document.getElementById('li-pass').value;
+  const err = document.getElementById('li-err');
+  err.innerHTML = '';
+  try {
+    const r = await fetch(API + '/auth-login', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await r.json();
+    if (!r.ok) { err.innerHTML = '<div class="err">' + esc(data.error || 'Login failed') + '</div>'; return; }
+    loadDashboard();
+  } catch (e) { err.innerHTML = '<div class="err">' + esc(e.message) + '</div>'; }
+}
+
+async function doLogout() {
+  await fetch(API + '/auth-logout', { method: 'POST', credentials: 'include' });
+  renderLogin();
+}
+
+async function loadDashboard() {
+  let d;
+  try { d = await api('/manager-dashboard'); } catch { return; }
+  const s = d.stats || {};
+  const roster = d.roster || [];
+  const overrides = d.overrides || [];
+
+  const rosterRows = roster.map(r => `
+    <tr>
+      <td><strong>${esc(r.name || r.email)}</strong><br><span style="font-size:11px;color:#6b6558">${esc(r.email)}</span></td>
+      <td><span class="pill">${r.commission_tier}%</span></td>
+      <td>${r.weeklyContacts}</td>
+      <td><strong>${r.conversions}</strong></td>
+      <td>${fmtDate(r.start_date || r.created_at)}</td>
+    </tr>`).join('');
+
+  const overrideRows = overrides.map(o => `
+    <tr>
+      <td>${esc(o.period_start)}</td>
+      <td>${money(o.total_override_cents)}</td>
+      <td><span class="pill">${esc(o.status)}</span></td>
+      <td>${o.paid_at ? fmtDate(o.paid_at) : '-'}</td>
+    </tr>`).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="topbar">
+      <h1>Manager Portal</h1>
+      <div>
+        <span style="font-size:13px;opacity:.7">${esc(d.manager.email)} (${esc(d.manager.role)})</span>
+        <a onclick="doLogout()" style="cursor:pointer">Sign out</a>
+      </div>
+    </div>
+    <div class="w">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-num">${s.repCount || 0}</div><div class="stat-label">Reps on Team</div></div>
+        <div class="stat-card"><div class="stat-num">${money(s.team_book_mrr_cents || 0)}</div><div class="stat-label">Team Book MRR</div></div>
+        <div class="stat-card"><div class="stat-num">${s.team_vested_sponsor_count || 0}</div><div class="stat-label">Vested Sponsors</div></div>
+        <div class="stat-card"><div class="stat-num">T${s.tier || 1}</div><div class="stat-label">Manager Tier (${s.override_pct || 5}%)</div></div>
+        <div class="stat-card"><div class="stat-num">${money(Math.floor((s.team_book_mrr_cents || 0) * (s.override_pct || 5) / 100))}</div><div class="stat-label">Projected Monthly Override</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Team Roster</h2>
+        ${roster.length ? `<table><thead><tr><th>Rep</th><th>Tier</th><th>Contacts (7d)</th><th>Conversions</th><th>Start Date</th></tr></thead><tbody>${rosterRows}</tbody></table>` : '<p style="color:#6b6558">No reps assigned to you yet. Ask admin to assign reps to your team.</p>'}
+      </div>
+
+      <div class="card">
+        <h2>Override Payout History</h2>
+        ${overrides.length ? `<table><thead><tr><th>Period</th><th>Amount</th><th>Status</th><th>Paid</th></tr></thead><tbody>${overrideRows}</tbody></table>` : '<p style="color:#6b6558">No override payouts yet.</p>'}
+      </div>
+    </div>`;
+}
+
+loadDashboard().catch(() => {});
+</script>
+</body></html>
