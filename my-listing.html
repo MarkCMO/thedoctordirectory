@@ -279,8 +279,17 @@ async function changePass() {
   const msg = document.getElementById('pw-msg');
   if (!cur || nw.length < 8) { msg.innerHTML = '<span class="err">8+ chars required</span>'; return; }
   msg.innerHTML = 'Working...';
-  // TODO: implement owner password change endpoint
-  msg.innerHTML = '<span class="ok">Password change API coming soon</span>';
+  try {
+    const r = await fetch(API + '/facility-change-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: LISTING.slug, accessToken: LISTING.accessToken, currentPassword: cur, newPassword: nw })
+    });
+    const data = await r.json();
+    if (!r.ok) { msg.innerHTML = '<span class="err">' + esc(data.error || 'Failed') + '</span>'; return; }
+    document.getElementById('ac-cur').value = '';
+    document.getElementById('ac-new').value = '';
+    msg.innerHTML = '<span class="ok">Password updated</span>';
+  } catch (e) { msg.innerHTML = '<span class="err">' + esc(e.message) + '</span>'; }
 }
 
 async function cancelSubscription() {
