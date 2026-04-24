@@ -73,7 +73,38 @@ exports.handler = async (event) => {
 
     // Email owner on payment events
     try {
-      const { data: listing } = await sb().from('listings').select('slug,name,plan,claimed_by_email,tenant_id').eq('square_subscription_id', subId).maybeSingle();
+      const { data: listing } = await sb().from('listings').select('slug,name,plan,claimed_by_email,tenant_id,referred_by_code').eq('square_subscription_id', subId).maybeSingle();
+
+      // Referral conversion credit on first paid invoice
+      if (listing && listing.referred_by_code && type === 'invoice.payment_made') {
+        try {
+          const PLAN_MRR = { premium: 4900, elite: 9900, sponsor: 49900 };
+          const creditCents = Math.floor((PLAN_MRR[listing.plan] || 0) * 0.10);
+          const { data: ref } = await sb().from('referral_codes').select('*').eq('code', listing.referred_by_code).single();
+          if (ref && creditCents > 0) {
+            // Only credit once per referred listing
+            const { data: prior } = await sb().from('referral_events').select('id')
+              .eq('code', ref.code).eq('referred_slug', listing.slug).eq('event_type', 'conversion').limit(1);
+            if (!prior || !prior.length) {
+              await sb().from('referral_events').insert({
+                tenant_id: listing.tenant_id, code: ref.code, event_type: 'conversion',
+                referred_slug: listing.slug, plan: listing.plan, credit_cents: creditCents
+              });
+              await sb().from('referral_codes').update({
+                conversions: (ref.conversions || 0) + 1,
+                credit_earned_cents: (ref.credit_earned_cents || 0) + creditCents
+              }).eq('code', ref.code);
+              // Apply credit to the referrer's listing
+              const { data: owner } = await sb().from('listings').select('account_credit_cents')
+                .eq('tenant_id', ref.tenant_id).eq('slug', ref.owner_slug).single();
+              await sb().from('listings').update({
+                account_credit_cents: (owner?.account_credit_cents || 0) + creditCents
+              }).eq('tenant_id', ref.tenant_id).eq('slug', ref.owner_slug);
+            }
+          }
+        } catch (e) { console.error('referral conversion:', e.message); }
+      }
+
       if (listing?.claimed_by_email) {
         const first = (listing.name || '').split(/\s+/)[0] || 'there';
         const billingUrl = `https://thedoctordirectory.com/billing?slug=${encodeURIComponent(listing.slug)}`;

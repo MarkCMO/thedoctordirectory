@@ -35,6 +35,8 @@ body { background: #f7f5f0; }
 <script>
 const API = '/api';
 let SLUG = new URLSearchParams(location.search).get('slug') || '';
+let REF_CODE = new URLSearchParams(location.search).get('ref') || (document.cookie.match(/ddref=([^;]+)/) || [])[1] || '';
+if (REF_CODE) { document.cookie = 'ddref=' + encodeURIComponent(REF_CODE) + '; path=/; max-age=2592000; SameSite=Lax'; try { fetch(API + '/referral?code=' + encodeURIComponent(REF_CODE)); } catch {} }
 let STEP = 'lookup';  // lookup | request | verify | password | done
 let LISTING = null;
 let EMAIL = '';
@@ -157,7 +159,7 @@ async function setPassword() {
   msg.innerHTML = 'Working...';
   const r = await fetch(API + '/facility-claim', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ step: 'set-password', slug: SLUG, email: EMAIL, code: CODE, password: p1 })
+    body: JSON.stringify({ step: 'set-password', slug: SLUG, email: EMAIL, code: CODE, password: p1, refCode: REF_CODE || undefined })
   });
   const data = await r.json();
   if (!r.ok) { msg.innerHTML = `<div class="err">${esc(data.error || 'Failed')}</div>`; return; }

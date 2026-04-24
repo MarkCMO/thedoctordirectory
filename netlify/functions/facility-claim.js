@@ -105,6 +105,23 @@ exports.handler = async (event) => {
 
     await audit(email, 'claim.complete', 'listing', slug, { tenant: tenant.id }, ip, tenant.id);
 
+    // Referral attribution: if a ref code was passed, track signup
+    if (body.refCode) {
+      try {
+        const { data: ref } = await sb().from('referral_codes').select('*').eq('code', String(body.refCode).toUpperCase()).single();
+        if (ref) {
+          await sb().from('referral_events').insert({
+            tenant_id: tenant.id, code: ref.code, event_type: 'signup',
+            referred_slug: slug, referred_email: email, ip_address: ip
+          });
+          await sb().from('referral_codes').update({ signups: (ref.signups || 0) + 1 }).eq('code', ref.code);
+          // Tag the new listing so future upgrades credit the referrer
+          await sb().from('listings').update({ referred_by_code: ref.code })
+            .eq('tenant_id', tenant.id).eq('slug', slug);
+        }
+      } catch (e) { console.error('ref attribution:', e.message); }
+    }
+
     try {
       await sendEvent({
         to: email, tenantId: tenant.id, event: 'claim.approved',
