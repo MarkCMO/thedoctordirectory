@@ -7,6 +7,7 @@ const { sb } = require('./db');
 const { resolveTenant } = require('./_tenant');
 const { getIp, json } = require('./_auth');
 const { sendEvent } = require('./email-send');
+const { checkRate } = require('./_ratelimit');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return json(405, { error: 'method not allowed' });
@@ -36,6 +37,10 @@ exports.handler = async (event) => {
 
   const ip = getIp(event);
   const ua = event.headers?.['user-agent'] || null;
+
+  // Rate limit: max 10 reviews/hour from a single IP
+  const rl = await checkRate({ key: 'review:' + ip, limit: 10, windowMs: 60 * 60 * 1000 });
+  if (!rl.ok) return json(429, { error: 'too many review submissions; please try again later' });
 
   // Basic dupe guard: same IP + slug within 5 min
   const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();

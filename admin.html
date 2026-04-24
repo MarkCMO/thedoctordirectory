@@ -412,6 +412,7 @@ async function refreshListings() {
       <td><div class="btn-row">
         <a href="/doctors/${l.slug}" target="_blank" class="btn btn-sm">View</a>
         <button class="btn btn-sm" onclick="editListing('${l.slug}')">Edit</button>
+        <button class="btn btn-sm" onclick="toggleFeatured('${l.slug}', ${l.featured ? 'false' : 'true'})" title="${l.featured ? 'Unfeature' : 'Feature'}">${l.featured ? '★' : '☆'}</button>
       </div></td>
     </tr>`).join('');
   document.getElementById('listings-body').innerHTML = `
@@ -426,6 +427,10 @@ async function refreshListings() {
         ${r.page < r.totalPages ? `<button class="btn btn-sm" onclick="LIST_STATE.page++;refreshListings()">Next</button>` : ''}
       </div>
     </div>`;
+}
+async function toggleFeatured(slug, featured) {
+  await api('/featured-doctors', { method: 'POST', body: { slug, featured } });
+  refreshListings();
 }
 function editListing(slug) {
   showModal(`

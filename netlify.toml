@@ -15,6 +15,12 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
+# Dynamic doctor sitemap
+[[redirects]]
+  from = "/sitemap-doctors.xml"
+  to = "/.netlify/functions/sitemap-doctors"
+  status = 200
+
 # Scheduled functions
 [functions."admin-keepwarm"]
   schedule = "*/5 * * * *"
@@ -63,5 +69,25 @@
 
 [[headers]]
   for = "/rep-dashboard*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/rep-portal*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/rep-statement*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/manager-portal*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/billing*"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow"

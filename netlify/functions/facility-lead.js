@@ -7,6 +7,7 @@ const { sb } = require('./db');
 const { resolveTenant } = require('./_tenant');
 const { json, getIp } = require('./_auth');
 const { sendEvent } = require('./email-send');
+const { checkRate } = require('./_ratelimit');
 
 function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '')); }
 
@@ -29,6 +30,11 @@ exports.handler = async (event) => {
   if (!slug || !name || !validEmail(email) || !message) {
     return json(400, { error: 'slug, name, valid email, and message required' });
   }
+
+  // Rate limit: max 5 leads/hour per IP
+  const ip = getIp(event);
+  const rl = await checkRate({ key: 'lead:' + ip, limit: 5, windowMs: 60 * 60 * 1000 });
+  if (!rl.ok) return json(429, { error: 'too many submissions; please try again later' });
 
   let tenant;
   try { tenant = await resolveTenant(event); }

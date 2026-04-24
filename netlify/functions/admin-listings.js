@@ -25,7 +25,7 @@ exports.handler = async (event) => {
   const offset = (page - 1) * limit;
 
   let query = sb().from('listings').select(
-    'slug,name,specialty,sub_specialty,city,state,zip,phone,email,plan,status,rating,reviews,claimed_at,crm_status,poc_name,poc_phone,poc_email,last_contact_at',
+    'slug,name,specialty,sub_specialty,city,state,zip,phone,email,plan,status,rating,reviews,featured,claimed_at,crm_status,poc_name,poc_phone,poc_email,last_contact_at',
     { count: 'exact' }
   ).eq('tenant_id', tenant.id);
 
