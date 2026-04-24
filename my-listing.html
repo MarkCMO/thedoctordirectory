@@ -154,6 +154,7 @@ function renderTab() {
 
 function renderOverview() {
   const l = LISTING;
+  setTimeout(loadCompleteness, 10);
   return `
     <div class="stat-grid">
       <div class="stat"><div class="stat-num">${STATS.totalLeads || 0}</div><div class="stat-label">Total Leads</div></div>
@@ -162,6 +163,7 @@ function renderOverview() {
       <div class="stat"><div class="stat-num">${l.rating || '-'}</div><div class="stat-label">Avg Rating</div></div>
       <div class="stat"><div class="stat-num">${l.reviews || 0}</div><div class="stat-label">Reviews</div></div>
     </div>
+    <div class="card" id="completeness-card" style="display:none"></div>
     <div class="card">
       <h3>Your Public Profile</h3>
       <p>Your listing is live at <a href="/doctors/${esc(l.slug)}" target="_blank" style="color:#8a6a34">thedoctordirectory.com/doctors/${esc(l.slug)}</a></p>
@@ -271,6 +273,31 @@ function renderAccount() {
       <hr style="border:none;border-top:1px solid #e5e1d6;margin:16px 0">
       <button class="btn" onclick="location.href='/'">Sign Out</button>
     </div>`;
+}
+
+async function loadCompleteness() {
+  try {
+    const r = await fetch(API + '/listing-completeness?slug=' + encodeURIComponent(LISTING.slug) + '&accessToken=' + encodeURIComponent(LISTING.accessToken));
+    const d = await r.json();
+    if (!r.ok) return;
+    const card = document.getElementById('completeness-card');
+    if (!card) return;
+    const color = d.score >= 80 ? '#1b7a2e' : d.score >= 50 ? '#8a6a34' : '#c4432a';
+    card.style.display = 'block';
+    card.innerHTML = `
+      <h3>Profile Completeness</h3>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
+        <div style="font-family:'Playfair Display',serif;font-size:40px;font-weight:700;color:${color}">${d.score}%</div>
+        <div style="flex:1;height:8px;background:#e5e1d6;border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${d.score}%;background:${color};transition:width .4s"></div>
+        </div>
+      </div>
+      <ul style="list-style:none;padding:0;margin:0;font-size:13px">
+        ${(d.checks || []).map(c => `<li style="padding:6px 0;color:${c.ok?'#1b7a2e':'#6b6558'}">${c.ok?'✓':'○'} ${esc(c.label)}</li>`).join('')}
+      </ul>
+      <p style="font-size:12px;color:#6b6558;margin-top:10px">A complete profile ranks higher in search and converts 3x more inquiries.</p>
+    `;
+  } catch {}
 }
 
 async function changePass() {
