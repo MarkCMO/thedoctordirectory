@@ -1,0 +1,112 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Commission Statement | The Doctor Directory</title>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+body { background:#f7f5f0; font-family:'Inter',system-ui,sans-serif; color:#0b1a2f; margin:0; }
+.top { background:#0b1a2f; color:#fff; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; }
+.top h1 { font-family:'Playfair Display',serif; margin:0; font-size:20px; }
+.top a { color:rgba(255,255,255,.8); text-decoration:none; font-size:13px; margin-left:16px; }
+.w { max-width:1000px; margin:28px auto; padding:0 24px; }
+.card { background:#fff; border:1px solid #e5e1d6; border-radius:10px; padding:22px; margin-bottom:20px; }
+h2 { font-family:'Playfair Display',serif; margin:0 0 14px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-bottom:16px; }
+.stat { background:#faf8f3; border:1px solid #e5e1d6; border-radius:8px; padding:14px; }
+.stat .n { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; }
+.stat .l { font-size:11px; color:#6b6558; text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th,td { padding:10px; text-align:left; border-bottom:1px solid #f0ede3; }
+th { background:#faf8f3; color:#6b6558; font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+select,.btn { padding:8px 12px; border:1px solid #c8c0ae; border-radius:6px; background:#fff; font-size:13px; }
+.btn-primary { background:#C8A45E; border-color:#C8A45E; color:#0b1a2f; font-weight:600; cursor:pointer; }
+.pill { display:inline-block; padding:2px 10px; border-radius:10px; font-size:11px; font-weight:600; background:#eee; }
+.pill-active { background:#e7f3e9; color:#1b7a2e; }
+.pill-paid { background:#fff2d6; color:#8a6a34; }
+.pill-paused { background:#ffd9d0; color:#c4432a; }
+@media print { .top,.noprint { display:none; } body { background:#fff; } }
+</style></head><body>
+<div id="app"></div>
+<script>
+const API='/api';
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function money(c){return '$'+((c||0)/100).toFixed(2);}
+function fmtDate(d){return d?new Date(d).toLocaleDateString():'-';}
+
+async function load(period){
+  const q = period ? ('?period='+encodeURIComponent(period)) : '';
+  const r = await fetch(API+'/rep-statement'+q, { credentials:'include' });
+  if (r.status===401||r.status===403){ location.href='/rep-portal'; return; }
+  const d = await r.json();
+  render(d);
+}
+
+function render(d){
+  const t = d.totals || {};
+  const rep = d.rep || {};
+  const items = d.items || [];
+  const history = d.history || [];
+  const itemRows = items.map(i=>`
+    <tr>
+      <td><a href="/doctors/${esc(i.slug)}" target="_blank" style="color:#8a6a34;text-decoration:none">${esc(i.name)}</a></td>
+      <td><span class="pill">${esc(i.plan||'free')}</span></td>
+      <td>${money(i.mrr_cents)}</td>
+      <td><strong>${money(i.commission_cents)}</strong></td>
+      <td><span class="pill pill-${['active','trialing'].includes(i.subscription_status)?'active':(i.subscription_status==='past_due'?'paused':'paused')}">${esc(i.subscription_status||'-')}</span></td>
+      <td>${fmtDate(i.claimed_at)}</td>
+    </tr>`).join('');
+  const histRows = history.map(h=>`
+    <tr>
+      <td>${fmtDate(h.period_start)}</td>
+      <td>${money(h.gross_cents)}</td>
+      <td style="color:#c4432a">${h.clawback_cents?'-'+money(h.clawback_cents):'-'}</td>
+      <td><strong>${money(h.net_cents)}</strong></td>
+      <td><span class="pill pill-${h.status==='paid'?'paid':'active'}">${esc(h.status)}</span></td>
+      <td>${h.paid_at?fmtDate(h.paid_at):'-'}</td>
+    </tr>`).join('');
+  const thisMonth = new Date().toISOString().slice(0,7);
+  const periods = [];
+  for (let i=0;i<12;i++){ const dt=new Date(); dt.setMonth(dt.getMonth()-i); periods.push(dt.toISOString().slice(0,7)); }
+  document.getElementById('app').innerHTML = `
+    <div class="top">
+      <h1>Commission Statement</h1>
+      <div class="noprint">
+        <a href="/rep-portal">Back to rep dashboard</a>
+        <a onclick="window.print()" style="cursor:pointer">Print / Save PDF</a>
+      </div>
+    </div>
+    <div class="w">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div>
+            <strong>${esc(rep.name||rep.email)}</strong><br>
+            <span style="font-size:12px;color:#6b6558">${esc(rep.email)} &middot; Tier: <strong>${rep.tier||30}%</strong> &middot; Vested sponsors: <strong>${rep.vested_sponsor_count||0}</strong></span>
+          </div>
+          <div class="noprint">
+            <label style="font-size:12px;color:#6b6558">Period</label>
+            <select id="per" onchange="load(this.value+'-01')">
+              ${periods.map(p=>`<option value="${p}" ${p+'-01'===d.period?'selected':''}>${p}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="stat"><div class="n">${t.active_conversions||0}</div><div class="l">Active Conversions</div></div>
+        <div class="stat"><div class="n">${t.total_conversions||0}</div><div class="l">All-Time Conversions</div></div>
+        <div class="stat"><div class="n">${money(t.team_book_mrr_cents||0)}</div><div class="l">Book of Business MRR</div></div>
+        <div class="stat"><div class="n">${money(t.projected_monthly_commission_cents||0)}</div><div class="l">Projected Monthly Commission</div></div>
+      </div>
+      <div class="card">
+        <h2>Your Book of Business</h2>
+        ${items.length?`<table><thead><tr><th>Doctor</th><th>Plan</th><th>MRR</th><th>Your Cut</th><th>Status</th><th>Claimed</th></tr></thead><tbody>${itemRows}</tbody></table>`:'<p style="color:#6b6558">No conversions yet. Lock a lead by converting a rep_contact into a paid plan.</p>'}
+      </div>
+      <div class="card">
+        <h2>Payout History</h2>
+        ${history.length?`<table><thead><tr><th>Period</th><th>Gross</th><th>Clawback</th><th>Net</th><th>Status</th><th>Paid</th></tr></thead><tbody>${histRows}</tbody></table>`:'<p style="color:#6b6558">No payouts issued yet.</p>'}
+      </div>
+      <p style="font-size:12px;color:#6b6558">Commissions are calculated from active/trialing subscriptions locked to your email. Cancellations trigger a clawback in the following period. Paid out monthly to the payout method on file.</p>
+    </div>`;
+}
+load();
+</script>
+</body></html>

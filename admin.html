@@ -383,6 +383,7 @@ async function load_listings() {
       <select id="f-plan"><option value="">All plans</option>${['free','premium','elite','sponsor'].map(p=>`<option ${LIST_STATE.plan===p?'selected':''}>${p}</option>`).join('')}</select>
       <select id="f-claimed"><option value="">All</option><option value="yes" ${LIST_STATE.claimed==='yes'?'selected':''}>Claimed</option><option value="no" ${LIST_STATE.claimed==='no'?'selected':''}>Unclaimed</option></select>
       <button class="btn btn-primary" onclick="doListSearch()">Search</button>
+      <a class="btn btn-sm" href="/api/admin-export?type=listings" download style="margin-left:auto">Export CSV</a>
     </div>
     <div id="listings-body"></div>`;
 
@@ -477,6 +478,10 @@ async function load_leads() {
     </tr>`).join('');
   document.getElementById('tab-content').innerHTML = `
     <div class="card" style="padding:0">
+      <div style="padding:12px 16px;border-bottom:1px solid #e5e1d6;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:#6b6558">${(r.leads || []).length} leads</span>
+        <a class="btn btn-sm" href="/api/admin-export?type=leads" download>Export CSV</a>
+      </div>
       <table class="admin-table">
         <thead><tr><th>Patient</th><th>Doctor</th><th>Type</th><th>Status</th><th>Date</th><th></th></tr></thead>
         <tbody>${rows || '<tr><td colspan="6">No leads yet</td></tr>'}</tbody>
